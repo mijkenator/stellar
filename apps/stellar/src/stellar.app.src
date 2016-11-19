@@ -1,0 +1,19 @@
+{application, stellar,
+ [{description, "An OTP application"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, { stellar_app, []}},
+  {applications,
+   [kernel,
+    stdlib
+    ,lager
+    ,cowboy
+%    ,active
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, []},
+  {links, []}
+ ]}.
