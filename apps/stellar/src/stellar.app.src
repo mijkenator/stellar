@@ -8,7 +8,7 @@
     stdlib
     ,lager
     ,cowboy
-%    ,active
+    ,active
    ]},
   {env,[]},
   {modules, []},
