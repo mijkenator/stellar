@@ -21,6 +21,11 @@ start(_StartType, _StartArgs) ->
     cowboy:start_http(my_http_listener, 100, [{port, 8080}],
         [{env, [{dispatch, Dispatch}]}]
     ),
+    emysql:add_pool(hello_pool, [{size,1},
+                     {user,"stellar"},
+                     {password,"stellar"},
+                     {database,"stellar"},
+                     {encoding,utf8}]),
     stellar_sup:start_link().
 
 %%--------------------------------------------------------------------
