@@ -28,7 +28,17 @@ start_link() ->
 
 %% Child :: {Id,StartFunc,Restart,Shutdown,Type,Modules}
 init([]) ->
-    {ok, { {one_for_all, 0, 1}, []} }.
+    _MemCached = {mainCluster,
+        {mcd_cluster, start_link, [mainCluster, [
+            {host1, ["localhost"], 10},
+            {host2, ["localhost"], 20}
+        ]]},
+        permanent, 60000, worker, [mcd_cluster]},
+
+    {ok, { {one_for_all, 0, 1}, [
+	_MemCached
+
+   ]} }.
 
 %%====================================================================
 %% Internal functions
