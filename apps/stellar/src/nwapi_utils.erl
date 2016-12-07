@@ -203,9 +203,8 @@ loop(Port, DataAcc) ->
 
 send_email(To, Mail) when is_binary(To) -> send_email([To], Mail);
 send_email(To, Mail) ->
-    gen_smtp_client:send({<<"support@keku.com">>, To, Mail},
-        %[{relay, "54.236.184.247"}, {port, 25}, {auth, plain}, {username, "kekumarketing"}, {password, "tRM-de7S-qbS4-e9Da"}]),
-        [{relay, "10.0.0.78"}, {port, 25}]).
+    gen_smtp_client:send({<<"support">>, To, Mail},
+        [{relay, "127.0.0.1"}, {port, 25}]).
 
 zip_ver(Country, Zip) ->
     try
