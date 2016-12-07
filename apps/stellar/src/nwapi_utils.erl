@@ -19,12 +19,14 @@
     check_field_param/2,
     external_date/3,
     send_email/2,
+    send_email/3,
     zip_fix/1,
     validate_zip/2,
     get_country/1,
     check_wapi2_session/1,
     clean_login/1,
-    zip_ver/2
+    zip_ver/2,
+    get_smtp_creds/0
 ]).
 
 
@@ -201,10 +203,21 @@ loop(Port, DataAcc) ->
             DataAcc
     end.
 
+get_smtp_creds() ->
+	{ok, [Creds]} = file:consult("../../../../smtp_creds.txt"),
+	Creds.
+
+send_email(To, Path, Values) ->
+    erlydtl:compile(Path, message),
+    {ok, Message} = message:render(Values),
+    send_email(To, Message).
+
 send_email(To, Mail) when is_binary(To) -> send_email([To], Mail);
 send_email(To, Mail) ->
-    gen_smtp_client:send({<<"support">>, To, Mail},
-        [{relay, "127.0.0.1"}, {port, 25}]).
+    {H, P, L, Pwd} = get_smtp_creds(),
+    gen_smtp_client:send({<<"noreply@stellarmakeover.com">>, To, Mail},
+        %[{relay, "127.0.0.1"}, {port, 25}]).
+        [{relay, H}, {port, P}, {username, L}, {password, Pwd}]).
 
 zip_ver(Country, Zip) ->
     try
