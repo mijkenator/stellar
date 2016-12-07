@@ -16,12 +16,14 @@
 
 start(_StartType, _StartArgs) ->
     Dispatch = cowboy_router:compile([
-        {'_', [{"/", stellar_root_handler, []}]}
+		{'_', [
+			{'_', stellar_root_handler, []}
+		]}
     ]),
-    cowboy:start_http(my_http_listener, 100, [{port, 8080}],
-        [{env, [{dispatch, Dispatch}]}]
-    ),
-    emysql:add_pool(hello_pool, [{size,1},
+    {ok, _} = cowboy:start_clear(http, 100, [{port, 8080}], #{
+		env => #{dispatch => Dispatch}
+    }),
+    emysql:add_pool(mysqlpool, [{size,1},
                      {user,"stellar"},
                      {password,"stellar"},
                      {database,"stellar"},
