@@ -1,4 +1,4 @@
--module(stellar_root_handler).
+-module(user_controller).
 
 -include("nwapi.hrl").
 -include("nwapi_errors.hrl").
@@ -14,11 +14,11 @@
     ver/0
 ]).
 
-init(Req, Opts) -> utils_controller:controller_init(stellar_root_handler, Req, Opts).
+init(Req, Opts) -> utils_controller:controller_init(user_controller, Req, Opts).
 
 -spec is_auth_method(binary()) -> boolean().
 is_auth_method(Action) when is_binary(Action) ->
-	lists:member(Action, [<<"login">>, <<"check_session">>]).
+	lists:member(Action, []).
 
 
 get_action(_, Req, Opts, _) ->
@@ -27,22 +27,26 @@ get_action(_, Req, Opts, _) ->
 nonauth_get_action(_, Req, Opts) ->
     {ok, ?NWR(reply, [<<"CUser NAGA UNKCOMMAND\nNOK">>, Req]), Opts}.
 
-action(A, _JSON, Req, Opts, {auth, SData, _SID}) when A == <<"login">>;A == <<"check_session">> ->
+action(_Action, _, Req, Opts, _) ->
+    {ok, ?NWR(reply, [<<"CUserA UNKCOMMAND\nNOK">>, Req]), Opts}.
+
+nonauth_action(<<"signup">> = A, JSON, Req, Opts, _Session) ->
     try
-        AccountId = proplists:get_value(<<"account_id">>, SData),
-        UT 	  = proplists:get_value(<<"user_type">>, SData),
-        lager:debug("WREF: ~p", [AccountId]),
-	Ret = #{<<"uid">> => AccountId, <<"ut">> => UT},
-        lager:debug("WREF RET: ~p", [Ret]),
-        ?OKRESP(A, Ret, Req, Opts)
+        lager:debug("UCSIGNUP: ~p", [JSON]),
+	Params = [ 
+            {"login",       [undefined, required, undefined ]},
+            {"password",    [undefined, required, undefined ]}
+        ],
+        [Login, Pwd] = nwapi_utils:get_json_params(JSON, Params),
+	case model_user:signup(Login, Pwd) of
+	   {ok,Uid} -> ?OKRESP(A, [Uid], Req, Opts);
+	   {error, Error} -> ?ERRRESP(Error, A, Req, Opts)
+	end
     catch
         E:R ->
             lager:error("CU WREFERR ~p ~p",[E,R]),
             nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
     end;
-action(_Action, _, Req, Opts, _) ->
-    {ok, ?NWR(reply, [<<"CUserA UNKCOMMAND\nNOK">>, Req]), Opts}.
-
 nonauth_action(_Action, _, Req, Opts, _) ->
     {ok, ?NWR(reply, [<<"CUser NA UNKCOMMAND\nNOK">>, Req]), Opts}.
 
