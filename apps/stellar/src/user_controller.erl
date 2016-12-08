@@ -30,6 +30,39 @@ nonauth_get_action(_, Req, Opts) ->
 action(_Action, _, Req, Opts, _) ->
     {ok, ?NWR(reply, [<<"CUserA UNKCOMMAND\nNOK">>, Req]), Opts}.
 
+nonauth_action(<<"signup-confirm">> = A, JSON, Req, Opts, _Session) ->
+    try
+        lager:debug("UCSIGNUP-C: ~p", [JSON]),
+	Params = [ 
+            {"guid",    [undefined, required, undefined ]}
+        ],
+        [Guid] = nwapi_utils:get_json_params(JSON, Params),
+	case model_user:signup_confirm(Guid) of
+	   {ok,Uid} -> ?OKRESP(A, [Uid], Req, Opts);
+	   {error, Error} -> ?ERRRESP(Error, A, Req, Opts)
+	end
+    catch
+        E:R ->
+            lager:error("CU SC ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
+nonauth_action(<<"restore-pwd-confirm">> = A, JSON, Req, Opts, _Session) ->
+    try
+        lager:debug("UCRPC: ~p", [JSON]),
+	Params = [ 
+            {"guid",        [undefined, required, undefined ]},
+            {"password",    [undefined, required, undefined ]}
+        ],
+        [Guid, Password] = nwapi_utils:get_json_params(JSON, Params),
+	case model_user:rpwd_confirm(Guid, Password) of
+	   {ok,Uid} -> ?OKRESP(A, [Uid], Req, Opts);
+	   {error, Error} -> ?ERRRESP(Error, A, Req, Opts)
+	end
+    catch
+        E:R ->
+            lager:error("CU UCRPC ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
 nonauth_action(<<"signup">> = A, JSON, Req, Opts, _Session) ->
     try
         lager:debug("UCSIGNUP: ~p", [JSON]),
