@@ -10,6 +10,16 @@ url = "http://52.76.131.184/_mijkweb/user"
 #r = s.post(url, data=payload)
 #print(r.text)
 
-payload = {'request' : '{"type":"restore_password", "login":"mijkenator@gmail.com"}'}
+#payload = {'request' : '{"type":"restore_password", "login":"mijkenator@gmail.com"}'}
+#r = s.post(url, data=payload)
+#print(r.text)
+
+#payload = {'request' : '{"type":"signup-confirm", "guid":"111111"}'}
+#r = s.post(url, data=payload)
+#print(r.text)
+
+#exit(0)
+
+payload = {'request' : '{"type":"restore-pwd-confirm", "guid":"111111", "password":"test123"}'}
 r = s.post(url, data=payload)
 print(r.text)

@@ -35,7 +35,7 @@ signup_confirm(Guid) ->
 	end.
 
 rpwd_confirm(Guid, Pwd) ->
-	case emysql:execute(mysqlpool, <<"select id from user_pwdrestore where guid=?">>, [Guid]) of
+	case emysql:execute(mysqlpool, <<"select uid from user_pwdrestore where guid=?">>, [Guid]) of
 		{result_packet,_,_,[[Uid]],_} when is_integer(Uid), Uid>0 -> 
 			emysql:execute(mysqlpool, <<"update user set password=? where id=?">>, [Pwd, Uid]),
 			emysql:execute(mysqlpool, <<"delete from user_pwdrestore where uid=?">>, [Uid]),
