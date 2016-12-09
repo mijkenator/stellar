@@ -20,6 +20,7 @@ url = "http://52.76.131.184/_mijkweb/user"
 
 #exit(0)
 
-payload = {'request' : '{"type":"restore-pwd-confirm", "guid":"111111", "password":"test123"}'}
+#payload = {'request' : '{"type":"restore-pwd-confirm", "guid":"111111", "password":"test123"}'}
+payload = {'request' : '{"type":"delete", "login":"mijkenator@gmail.com", "password":"test123"}'}
 r = s.post(url, data=payload)
 print(r.text)
