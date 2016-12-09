@@ -5,6 +5,7 @@
 	,login_restore/1
 	,signup_confirm/1
 	,rpwd_confirm/2
+	,delete_user/1
 ]).
 
 signup(Login, Password) ->
@@ -42,3 +43,6 @@ rpwd_confirm(Guid, Pwd) ->
 			{ok, Uid}
 		;_ -> {error, <<"user not found">>}
 	end.
+
+delete_user(Uid) -> emysql:execute(mysqlpool, <<"delete from user where id=?">>, [Uid]).
+
