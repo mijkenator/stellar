@@ -4,7 +4,9 @@
 	get_categories/0,
     create_category/1,
     delete_category/1,
-    update_category/2
+    update_category/2,
+
+    get_services/0
 ]).
 
 get_categories() ->
@@ -23,3 +25,11 @@ delete_category(ID) ->
 
 update_category(ID, Name) ->
     emysql:execute(mysqlpool, <<"update  service_category set name=? where id=?">>, [Name, ID]).
+
+get_services() ->
+	case emysql:execute(mysqlpool, <<"select id, cat_id, title, description, cost, duration, note, img from services">>, []) of
+		{result_packet,_,_,Ret,_} ->
+            F = [<<"id">>, <<"category">>, <<"title">>, <<"description">>, <<"cost">>, <<"duration">>, <<"note">>, <<"img">>],
+            [{lists:zip(F,P)}||P<-Ret]
+        ;_ -> []
+	end.
