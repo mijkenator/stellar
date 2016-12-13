@@ -2,7 +2,8 @@
 
 -export([
 	get_categories/0,
-    create_category/1
+    create_category/1,
+    delete_category/1
 ]).
 
 get_categories() ->
@@ -15,4 +16,7 @@ get_categories() ->
 
 create_category(Name) ->
     emysql:execute(mysqlpool, <<"insert into service_category (name) values (?)">>, [Name]).
+
+delete_category(ID) ->
+    emysql:execute(mysqlpool, <<"delete from service_category where id=?">>, [ID]).
 
