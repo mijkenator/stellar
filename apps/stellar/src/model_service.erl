@@ -7,7 +7,8 @@
     update_category/2,
 
     get_services/0,
-    create_service/6
+    create_service/6,
+    delete_service/1
 ]).
 
 get_categories() ->
@@ -38,3 +39,6 @@ get_services() ->
 create_service(CatID, Title, Desc, Cost, Dur, Note) ->
     emysql:execute(mysqlpool, <<"insert into services (cat_id, title, description, cost, duration, note) values (?,?,?,?,?,?)">>, 
         [CatID, Title, Desc, Cost, Dur, Note]).
+
+delete_service(ID) ->
+    emysql:execute(mysqlpool, <<"delete from services where id=?">>, [ID]).
