@@ -8,7 +8,8 @@
 
     get_services/0,
     create_service/6,
-    delete_service/1
+    delete_service/1,
+    update_service/7
 ]).
 
 get_categories() ->
@@ -42,3 +43,21 @@ create_service(CatID, Title, Desc, Cost, Dur, Note) ->
 
 delete_service(ID) ->
     emysql:execute(mysqlpool, <<"delete from services where id=?">>, [ID]).
+
+update_service(Id, CatID, Title, Desc, Cost, Dur, Note) ->
+    P = [{<<"cat_id">>, CatID},{<<"title">>, Title},{<<"description">>,Desc},{<<"cost">>, Cost},{<<"duration">>, Dur},{<<"note">>, Note}],
+    lager:debug("US1",[]),
+    Fun = fun({_, undefined}, A) -> A;
+             ({Fn,V}, {S,Pr})    -> {S++[<<Fn/binary,"=?">>],Pr++[V]} end,
+    lager:debug("US2",[]),
+    {SQLl,Pa} = lists:foldl(Fun, {[], []}, P),
+    lager:debug("US3",[]),
+    SQLa = list_to_binary(lists:join(<<",">>, SQLl)), 
+    lager:debug("US4 ~p",[{SQLa, SQLl}]),
+    SQL = <<"update services set ",SQLa/binary," where id=?">>,
+    lager:debug("US5",[]),
+    Params = Pa ++ [Id],
+    lager:debug("SQL: ~p", [SQL]),
+    lager:debug("Params: ~p", [Params]),
+    emysql:execute(mysqlpool, SQL, Params).
+

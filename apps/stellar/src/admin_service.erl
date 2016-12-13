@@ -151,6 +151,31 @@ action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"delete_service">> 
             lager:error("CAC WREFERR ~p ~p",[E,R]),
             nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
     end;
+action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"edit_service">> ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        UT 	  = proplists:get_value(<<"user_type">>, SData),
+        lager:debug("ASC ~p ~p", [A, {AccountId, UT}]),
+        UT =:= 2 orelse throw({error, bad_user_type }),
+	    Params = [ 
+            {"id",          [undefined, notrequired, undefined ]},
+            {"cat_id",      [undefined, notrequired, undefined ]},
+            {"title",       [undefined, notrequired, undefined ]},
+            {"description", [undefined, notrequired, undefined ]},
+            {"cost",        [undefined, notrequired, undefined ]},
+            {"duration",    [undefined, notrequired, undefined ]},
+            {"note",        [undefined, notrequired, undefined ]}
+        ],
+        lager:debug("~p Params1: ~p", [A, Params]),
+        [Id, CatID, Title, Desc, Cost, Dur, Note] = nwapi_utils:get_json_params(JSON, Params),
+        lager:debug("~p Params2: ~p", [A, {Id, CatID, Title, Desc, Cost, Dur, Note}]),
+        model_service:update_service(Id, CatID, Title, Desc, Cost, Dur, Note),
+        ?OKRESP(A, [], Req, Opts)
+    catch
+        E:R ->
+            lager:error("CAC WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
 
 action(_Action, _, Req, Opts, _) ->
     {ok, ?NWR(reply, [<<"CUserA UNKCOMMAND\nNOK">>, Req]), Opts}.

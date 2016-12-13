@@ -162,6 +162,9 @@ check_field_param(JSON, {FieldName, [DefaultValue, required, undefined]}) ->
     Ret = proplists:get_value(list_to_binary(FieldName), JSON, DefaultValue),
     Ret =/= undefined orelse throw({error, badvalue, FieldName}),
     Ret;
+check_field_param(JSON, {FieldName, [DefaultValue, notrequired, undefined]}) ->
+    Ret = proplists:get_value(list_to_binary(FieldName), JSON, DefaultValue),
+    Ret;
 check_field_param(JSON, {FieldName, [DefaultValue, required, {regexp, Re}]}) ->
     Ret = proplists:get_value(list_to_binary(FieldName), JSON, DefaultValue),
     Ret =/= undefined orelse throw({error, badvalue, FieldName}),

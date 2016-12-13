@@ -41,6 +41,7 @@ action(A, JSON, Req, Opts, {auth, SData, _SID}) when A =:= <<"login">> ->
         lager:debug("WREF RET: ~p", [Ret]),
         lager:debug("WREF precase: ~p", [{As,UT}]),
         case {As,UT} of
+            {<<"user">>, 0} -> ?OKRESP(A, Ret, Req, Opts);
             {<<"user">>, 1} -> ?OKRESP(A, Ret, Req, Opts);
             {<<"user">>, 2} -> ?OKRESP(A, Ret, Req, Opts);
             {<<"admin">>, 2} -> ?OKRESP(A, Ret, Req, Opts);

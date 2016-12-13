@@ -12,7 +12,8 @@ signup(Login, Password) ->
 	GUid = list_to_binary(uuid:to_string(uuid:v4())),
 	case emysql:execute(mysqlpool, <<"insert into user (login,password,utype,confirm_uid) values (?,?,0,?)">>, [Login,Password,GUid]) of
 		{ok_packet,_,_,Uid,_,_,[]} -> 
-		nwapi_utils:send_email(Login, <<"Subject: signup confirmation\n\n Confirmation code: ", GUid/binary>>),
+		nwapi_utils:send_email(Login, 
+            <<"Subject: signup confirmation\n\n Confirmation link: http://dev.stellarmakeover.com/after-sign-up/", GUid/binary>>),
 		{ok, Uid};
 		{error_packet,1,1062,<<"23000">>,_} -> {error, <<"already exists">>}
 	end.
@@ -23,7 +24,8 @@ login_restore(Login) ->
 		{result_packet,_,_,[[Uid]],_} when is_integer(Uid), Uid>0 -> 
 			emysql:execute(mysqlpool, <<"delete from user_pwdrestore where uid=?">>, [Uid]),
 			emysql:execute(mysqlpool, <<"insert into user_pwdrestore (uid, guid) values (?,?)">>, [Uid, GUid]),
-			nwapi_utils:send_email(Login, <<"Subject: password restore\n\n Restore code: ", GUid/binary>>), {ok, Uid}
+			nwapi_utils:send_email(Login, 
+                <<"Subject: password restore\n\n Restore link: http://dev.stellarmakeover.com/restore-password/", GUid/binary>>), {ok, Uid}
 		;_ -> {error, <<"user not found">>}
 	end.
 
