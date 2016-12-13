@@ -21,7 +21,7 @@ is_auth_method(Action) when is_binary(Action) ->
 	lists:member(Action, [
         <<"get_categories">>, <<"create_category">>, 
         <<"delete_category">>, <<"edit_category">>,
-        <<"get_services">>
+        <<"get_services">>, <<"create_service">>
     ]).
 
 
@@ -106,6 +106,28 @@ action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_services">> -
         Ret = model_service:get_services(),
         lager:debug("ASC ~p RET: ~p", [A, Ret]),
         ?OKRESP(A, Ret, Req, Opts)
+    catch
+        E:R ->
+            lager:error("CAC WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
+action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"create_service">> ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        UT 	  = proplists:get_value(<<"user_type">>, SData),
+        lager:debug("ASC ~p ~p", [A, {AccountId, UT}]),
+        UT =:= 2 orelse throw({error, bad_user_type }),
+	    Params = [ 
+            {"cat_id",      [undefined, required, undefined ]},
+            {"title",       [<<"">>, required, undefined ]},
+            {"description", [<<"">>, required, undefined ]},
+            {"cost",        [<<"">>, required, undefined ]},
+            {"duration",    [<<"">>, required, undefined ]},
+            {"note",        [<<"">>, required, undefined ]}
+        ],
+        [CatID, Title, Desc, Cost, Dur, Note] = nwapi_utils:get_json_params(JSON, Params),
+        model_service:create_service(CatID, Title, Desc, Cost, Dur, Note),
+        ?OKRESP(A, [], Req, Opts)
     catch
         E:R ->
             lager:error("CAC WREFERR ~p ~p",[E,R]),
