@@ -10,7 +10,7 @@ payload = {'request' : '{"type":"signup", "login":"mijkenator@gmail.com", "passw
 r = s.post(url, data=payload)
 print(r.text)
 
-exit(0)
+#exit(0)
 
 #payload = {'request' : '{"type":"restore_password", "login":"mijkenator@gmail.com"}'}
 #r = s.post(url, data=payload)
@@ -20,9 +20,10 @@ exit(0)
 #r = s.post(url, data=payload)
 #print(r.text)
 
-exit(0)
+#exit(0)
 
 #payload = {'request' : '{"type":"restore-pwd-confirm", "guid":"111111", "password":"test123"}'}
-payload = {'request' : '{"type":"delete", "login":"mijkenator@gmail.com", "password":"test123"}'}
+#payload = {'request' : '{"type":"delete", "login":"mijkenator@gmail.com", "password":"test123"}'}
+payload = {'request' : '{"type":"get_details", "login":"mijkenator@gmail.com", "password":"test"}'}
 r = s.post(url, data=payload)
 print(r.text)

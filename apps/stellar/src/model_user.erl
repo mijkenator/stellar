@@ -6,6 +6,7 @@
 	,signup_confirm/1
 	,rpwd_confirm/2
 	,delete_user/1
+    ,get_details/1
 ]).
 
 signup(Login, Password) ->
@@ -47,4 +48,13 @@ rpwd_confirm(Guid, Pwd) ->
 	end.
 
 delete_user(Uid) -> emysql:execute(mysqlpool, <<"delete from user where id=?">>, [Uid]).
+
+get_details(Uid) ->
+	case emysql:execute(mysqlpool, <<"select ifnull(name,''), ifnull(street,''), ifnull(apt,''), ifnull(zip,''), ifnull(city,''), ",
+                "ifnull(state,''), ifnull(phone,''), login from user where id=?">>, [Uid]) of
+		{result_packet,_,_,Ret,_} ->
+            F = [<<"name">>, <<"street">>, <<"apt">>, <<"zip">>, <<"city">>, <<"state">>, <<"phone">>, <<"email">>],
+            [{lists:zip(F,P)}||P<-Ret]
+        ;_ -> []
+	end.
 
