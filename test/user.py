@@ -10,6 +10,8 @@ payload = {'request' : '{"type":"signup", "login":"mijkenator@gmail.com", "passw
 r = s.post(url, data=payload)
 print(r.text)
 
+exit(0)
+
 #payload = {'request' : '{"type":"restore_password", "login":"mijkenator@gmail.com"}'}
 #r = s.post(url, data=payload)
 #print(r.text)
