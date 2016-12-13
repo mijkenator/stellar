@@ -27,3 +27,11 @@ print(r.text)
 payload = {'request' : '{"type":"get_details", "login":"mijkenator@gmail.com", "password":"test"}'}
 r = s.post(url, data=payload)
 print(r.text)
+
+payload = {'request' : '{"type":"set_details", "name":"1", "street":"2", "apt":"3", "zip":"4", "city":"5", "state":"6", "phone":"7"}'}
+r = s.post(url, data=payload)
+print(r.text)
+
+payload = {'request' : '{"type":"get_details", "login":"mijkenator@gmail.com", "password":"test"}'}
+r = s.post(url, data=payload)
+print(r.text)

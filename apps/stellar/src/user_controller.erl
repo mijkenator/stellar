@@ -51,6 +51,29 @@ action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_details">> ->
             lager:error("CU WREFERR ~p ~p",[E,R]),
             nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
     end;
+action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"set_details">> ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        Params = [ 
+            {"name",    [undefined, notrequired, undefined ]},
+            {"street",  [undefined, notrequired, undefined ]},
+            {"apt",     [undefined, notrequired, undefined ]},
+            {"zip",     [undefined, notrequired, undefined ]},
+            {"city",    [undefined, notrequired, undefined ]},
+            {"state",   [undefined, notrequired, undefined ]},
+            {"phone",   [undefined, notrequired, undefined ]}
+        ],
+        lager:debug("~p Params1: ~p", [A, Params]),
+        [Name, Street, Apt, Zip, City, State, Phone] = nwapi_utils:get_json_params(JSON, Params),
+        lager:debug("UCD: ~p", [AccountId]),
+	    Ret = model_user:set_details(AccountId, Name, Street, Apt, Zip, City, State, Phone),
+        lager:debug("UCD RET: ~p", [Ret]),
+        ?OKRESP(A, [], Req, Opts)
+    catch
+        E:R ->
+            lager:error("CU WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
 
 action(_Action, _, Req, Opts, _) ->
     {ok, ?NWR(reply, [<<"CUserA UNKCOMMAND\nNOK">>, Req]), Opts}.
