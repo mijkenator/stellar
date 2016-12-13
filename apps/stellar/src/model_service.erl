@@ -1,7 +1,8 @@
 -module(model_service).
 
 -export([
-	get_categories/0
+	get_categories/0,
+    create_category/1
 ]).
 
 get_categories() ->
@@ -11,4 +12,7 @@ get_categories() ->
             [{lists:zip(F,P)}||P<-Ret]
         ;_ -> []
 	end.
+
+create_category(Name) ->
+    emysql:execute(mysqlpool, <<"insert into service_category (name) values (?)">>, [Name]).
 

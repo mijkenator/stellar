@@ -10,5 +10,11 @@ payload = {'request' : '{"type":"get_categories", "login":"mijkenator@gmail.com"
 r = s.post(url, data=payload)
 print(r.text)
 
-exit(0)
+#exit(0)
+payload = {'request' : '{"type":"create_category", "name":"test1", "login":"mijkenator@gmail.com", "password":"test"}'}
+r = s.post(url, data=payload)
+print(r.text)
 
+payload = {'request' : '{"type":"get_categories", "login":"mijkenator@gmail.com", "password":"test"}'}
+r = s.post(url, data=payload)
+print(r.text)
