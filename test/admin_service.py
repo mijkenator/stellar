@@ -16,7 +16,7 @@ print(r.text)
 #print(r.text)
 
 
-payload = {'request' : '{"type":"delete_category", "id":4, "login":"mijkenator@gmail.com", "password":"test"}'}
+payload = {'request' : '{"type":"edit_category", "id":3, "name":"Nails", "login":"mijkenator@gmail.com", "password":"test"}'}
 r = s.post(url, data=payload)
 print(r.text)
 
