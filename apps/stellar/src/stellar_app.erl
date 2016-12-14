@@ -19,6 +19,7 @@ start(_StartType, _StartArgs) ->
 		{'_', [
 			{"/", stellar_root_handler, []},
 			{"/user", user_controller,  []},
+			{"/contractor", contractor_controller,  []},
 			{"/admin/service", admin_service,  []}
 		]}
     ]),

@@ -3,7 +3,8 @@
 -export([
     check/1,
     check_session/1,
-    set_session/2]).
+    set_session/2,
+    delete_session/1]).
 
 -define('SXP_TIME', 600*3).
 -define('MXP_TIME', 1200*3).
@@ -35,4 +36,5 @@ check_session(SID) ->
 set_session(SID, SData) ->
     mcd:set(mainCluster, SID, SData, ?MXP_TIME).
 
-
+delete_session(SID) ->
+    mcd:delete(mainCluster, SID).

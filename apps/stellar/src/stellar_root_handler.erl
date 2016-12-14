@@ -70,6 +70,18 @@ action(A, _JSON, Req, Opts, {auth, SData, _SID}) when A =:= <<"check_session">> 
 action(_Action, _, Req, Opts, _) ->
     {ok, ?NWR(reply, [<<"CUserA UNKCOMMAND\nNOK">>, Req]), Opts}.
 
+nonauth_action(<<"logout">> = A, _JSON, Req, Opts, {SS,_,SID}) ->
+    try
+        case SS of
+            auth -> mkh_session:delete_session(SID)
+            ;_   -> ok
+        end,
+        ?OKRESP(A, [], Req, Opts)
+    catch
+        E:R ->
+            lager:error("CU WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
 nonauth_action(_Action, _, Req, Opts, _) ->
     {ok, ?NWR(reply, [<<"CUser NA UNKCOMMAND\nNOK">>, Req]), Opts}.
 
