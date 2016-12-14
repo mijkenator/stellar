@@ -30,9 +30,11 @@ update_category(ID, Name) ->
     emysql:execute(mysqlpool, <<"update  service_category set name=? where id=?">>, [Name, ID]).
 
 get_services() ->
-	case emysql:execute(mysqlpool, <<"select id, cat_id, title, description, cost, duration, note, ifnull(img,'') from services">>, []) of
+	case emysql:execute(mysqlpool, <<"select s.id, s.cat_id, s.title, s.description, s.cost, s.duration, ",
+                    "s.note, ifnull(s.img,''),c.name from services s left join service_category c on c.id=s.cat_id">>, []) of
 		{result_packet,_,_,Ret,_} ->
-            F = [<<"id">>, <<"category">>, <<"title">>, <<"description">>, <<"cost">>, <<"duration">>, <<"note">>, <<"img">>],
+            F = [<<"id">>, <<"category">>, <<"title">>, <<"description">>, <<"cost">>, 
+                 <<"duration">>, <<"note">>, <<"img">>, <<"category_name">>],
             [{lists:zip(F,P)}||P<-Ret]
         ;_ -> []
 	end.
