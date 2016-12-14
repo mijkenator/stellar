@@ -3,7 +3,7 @@
 -export([
 	signup/3,
     get_details/1
-    %,set_details/4
+    ,set_details/3
 ]).
 
 signup(Login, Password, Refcode) ->
@@ -20,3 +20,14 @@ get_details(Uid) ->
             [{lists:zip(F,P)}||P<-Ret]
         ;_ -> []
 	end.
+
+
+set_details(Id, Name, Phone) ->
+    P = [{<<"name">>, Name}, {<<"phone">>, Phone}],
+    Fun = fun({_, undefined}, A) -> A;
+             ({Fn,V}, {S,Pr})    -> {S++[<<Fn/binary,"=?">>],Pr++[V]} end,
+    {SQLl,Pa} = lists:foldl(Fun, {[], []}, P),
+    SQLa = list_to_binary(lists:join(<<",">>, SQLl)), 
+    SQL = <<"update user set ",SQLa/binary," where id=?">>,
+    Params = Pa ++ [Id],
+    emysql:execute(mysqlpool, SQL, Params).

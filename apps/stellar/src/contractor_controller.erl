@@ -26,6 +26,24 @@ get_action(_, Req, Opts, _) ->
 nonauth_get_action(_, Req, Opts) ->
     {ok, ?NWR(reply, [<<"CUser NAGA UNKCOMMAND\nNOK">>, Req]), Opts}.
 
+action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"set_details">> ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        Params = [ 
+            {"name",    [undefined, notrequired, undefined ]},
+            {"phone",  [undefined, notrequired, undefined ]}
+        ],
+        lager:debug("~p Params1: ~p", [A, Params]),
+        [Name, Phone] = nwapi_utils:get_json_params(JSON, Params),
+        lager:debug("UCD: ~p", [AccountId]),
+	    Ret = model_contractor:set_details(AccountId, Name, Phone),
+        lager:debug("UCD RET: ~p", [Ret]),
+        ?OKRESP(A, [], Req, Opts)
+    catch
+        E:R ->
+            lager:error("CU WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
 action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_details">> ->
     try
         AccountId = proplists:get_value(<<"account_id">>, SData),
