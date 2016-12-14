@@ -3,31 +3,46 @@
 -export([
 	signup/3,
     get_details/1
-    ,set_details/3
+    ,set_details/11
 ]).
 
 signup(Login, Password, Refcode) ->
 	case emysql:execute(mysqlpool, <<"insert into user (login,password,refcode,utype) values (?,?,?,2)">>, [Login,Password,Refcode]) of
-		{ok_packet,_,_,Uid,_,_,[]} -> {ok, Uid};
+		{ok_packet,_,_,Uid,_,_,[]} -> 
+            emysql:execute(mysqlpool, <<"insert into contractor (uid) values (?)">>, [Uid]), 
+            {ok, Uid};
 		{error_packet,1,1062,<<"23000">>,_} -> {error, <<"already exists">>}
 	end.
 
 get_details(Uid) ->
-	case emysql:execute(mysqlpool, <<"select ifnull(name,''), ifnull(photo,''), ifnull(phone,''), ifnull(login,'') ",
-                "  from user where id=?">>, [Uid]) of
+	case emysql:execute(mysqlpool, <<
+                "select ifnull(c.fname,''), ifnull(c.lname,''), ifnull(u.photo,''), ifnull(u.phone,''), ifnull(u.login,''), ",
+                "ifnull(u.street,''), ifnull(u.apt,''),ifnull(u.city,''),ifnull(u.state,''),"
+                "ifnull(c.cphone,''),ifnull(c.bank_routing,''),ifnull(c.bank_account,'') "
+                "  from user u left join contractor c on c.uid=u.id where u.id=?">>, [Uid]) of
 		{result_packet,_,_,Ret,_} ->
-            F = [<<"name">>, <<"photo">>, <<"phone">>, <<"email">>],
+            F = [<<"fname">>, <<"lname">>, <<"photo">>, <<"phone">>, <<"email">>,
+            <<"street">>,<<"apt">>,<<"city">>,<<"state">>,<<"cell_phone">>,<<"bank_routing">>,<<"bank_account">>],
             [{lists:zip(F,P)}||P<-Ret]
         ;_ -> []
 	end.
 
 
-set_details(Id, Name, Phone) ->
-    P = [{<<"name">>, Name}, {<<"phone">>, Phone}],
+set_details(Id, FName, LName, Street, Apt, City, State, CPhone, BankR, BankA, Phone) ->
+    P = [{<<"name">>, <<FName/binary," ", LName/binary>>}, 
+         {<<"phone">>, Phone},
+         {<<"street">>, Street}, {<<"apt">>, Apt}, {<<"city">>, City}, {<<"state">>, State}],
     Fun = fun({_, undefined}, A) -> A;
              ({Fn,V}, {S,Pr})    -> {S++[<<Fn/binary,"=?">>],Pr++[V]} end,
     {SQLl,Pa} = lists:foldl(Fun, {[], []}, P),
     SQLa = list_to_binary(lists:join(<<",">>, SQLl)), 
     SQL = <<"update user set ",SQLa/binary," where id=?">>,
     Params = Pa ++ [Id],
-    emysql:execute(mysqlpool, SQL, Params).
+    emysql:execute(mysqlpool, SQL, Params),
+
+    Pc = [{<<"lname">>,LName},{<<"fname">>,FName},{<<"cphone">>,CPhone},{<<"bank_routing">>,BankR},{<<"bank_account">>, BankA}],
+    {SQLlc,Pac} = lists:foldl(Fun, {[], []}, Pc),
+    SQLac = list_to_binary(lists:join(<<",">>, SQLlc)), 
+    Params_c = Pac ++ [Id],
+    SQLc = <<"update contractor set ",SQLac/binary," where uid=?">>,
+    emysql:execute(mysqlpool, SQLc, Params_c).
