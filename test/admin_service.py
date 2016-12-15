@@ -10,7 +10,17 @@ payload = {'request' : '{"type":"get_categories", "login":"mijkenator@gmail.com"
 r = s.post(url, data=payload)
 print(r.text)
 
-#exit(0)
+payload = {'request' : '{"type":"get_services"}'}
+r = s.post(url, data=payload)
+print(r.text)
+
+print("--------------------------------------")
+files = {'image': open('/opt/stellar/test/MishaFeat.jpg', 'rb')}
+payload = {'id':3}
+r = s.post('http://52.76.131.184/_mijkweb/upload/service', data=payload, files=files)
+print(r.text)
+print("--------------------------------------")
+exit(0)
 #payload = {'request' : '{"type":"create_category", "name":"test1", "login":"mijkenator@gmail.com", "password":"test"}'}
 #r = s.post(url, data=payload)
 #print(r.text)

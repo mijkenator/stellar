@@ -8,7 +8,7 @@ url = "http://52.76.131.184/_mijkweb/"
 
 #payload = {'request' : '{"type":"login", "login":"mijkenator", "password":"test", "as":"admin"}'}
 #payload = {'request' : '{"type":"login", "login":"mijkenator", "password":"test"}'}
-payload = {'request' : '{"type":"login", "login":"gelevanog@gmail.com", "password":"ASDASD123"}'}
+payload = {'request' : '{"type":"login", "login":"gelevanog@gmail.com", "password":"lalala", "as":"contractor"}'}
 r = s.post(url, data=payload)
 print(r.text)
 

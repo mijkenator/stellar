@@ -20,7 +20,8 @@ start(_StartType, _StartArgs) ->
 			{"/", stellar_root_handler, []},
 			{"/user", user_controller,  []},
 			{"/contractor", contractor_controller,  []},
-			{"/admin/service", admin_service,  []}
+			{"/admin/service", admin_service,  []},
+            {"/upload/[...]", uploader_controller, []}
 		]}
     ]),
     {ok, _} = cowboy:start_clear(http, 100, [{port, 8080}], #{
