@@ -7,6 +7,7 @@
     update_category/2,
 
     get_services/0,
+    get_services/1,
     create_service/6,
     delete_service/1,
     update_service/7
@@ -29,9 +30,15 @@ delete_category(ID) ->
 update_category(ID, Name) ->
     emysql:execute(mysqlpool, <<"update  service_category set name=? where id=?">>, [Name, ID]).
 
-get_services() ->
+get_services() -> get_services(<<"0">>).
+get_services(Cid) when is_integer(Cid) -> get_services(integer_to_binary(Cid));
+get_services(Cid) when is_binary(Cid)  ->
+    {E,Pa} = case Cid of
+        <<"0">> -> {<<>>, []}
+        ;_ -> {<<" where s.cat_id=? ">>, [Cid]}
+    end,
 	case emysql:execute(mysqlpool, <<"select s.id, s.cat_id, s.title, s.description, s.cost, s.duration, ",
-                    "s.note, ifnull(s.img,''),c.name from services s left join service_category c on c.id=s.cat_id">>, []) of
+                    "s.note, ifnull(s.img,''),c.name from services s left join service_category c on c.id=s.cat_id", E/binary>>, Pa) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"id">>, <<"category">>, <<"title">>, <<"description">>, <<"cost">>, 
                  <<"duration">>, <<"note">>, <<"img">>, <<"category_name">>],

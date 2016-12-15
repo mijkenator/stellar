@@ -98,13 +98,17 @@ action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"edit_category">> -
             lager:error("CAC WREFERR ~p ~p",[E,R]),
             nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
     end;
-action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_services">> ->
+action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_services">> ->
     try
         AccountId = proplists:get_value(<<"account_id">>, SData),
         UT 	  = proplists:get_value(<<"user_type">>, SData),
         lager:debug("ASC ~p ~p", [A, {AccountId, UT}]),
         UT =:= 2 orelse throw({error, bad_user_type }),
-        Ret = model_service:get_services(),
+	    Params = [ 
+            {"cat_id",      [<<"0">>, required, undefined ]}
+        ],
+        [CatID] = nwapi_utils:get_json_params(JSON, Params),
+        Ret = model_service:get_services(CatID),
         lager:debug("ASC ~p RET: ~p", [A, Ret]),
         ?OKRESP(A, Ret, Req, Opts)
     catch
