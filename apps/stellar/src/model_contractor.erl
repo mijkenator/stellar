@@ -80,11 +80,11 @@ get_contractors() ->
                 "select u.id, ifnull(c.fname,''), ifnull(c.lname,''), ifnull(u.photo,''), ifnull(u.phone,''), ifnull(u.login,''), ",
                 "ifnull(u.street,''), ifnull(u.apt,''),ifnull(u.city,''),ifnull(u.state,''),"
                 "ifnull(c.cphone,''),ifnull(c.bank_routing,''),ifnull(c.bank_account,'') "
-                "  from user u left join contractor c on c.uid=u.id where u.type=3">>, []) of
+                "  from user u left join contractor c on c.uid=u.id where u.utype=3">>, []) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"id">>, <<"fname">>, <<"lname">>, <<"photo">>, <<"phone">>, <<"email">>,
             <<"street">>,<<"apt">>,<<"city">>,<<"state">>,<<"cell_phone">>,<<"bank_routing">>,<<"bank_account">>],
             [{lists:zip(F,P)}||P<-Ret]
-        ;_ -> []
+        ;_R -> []
 	end.
 

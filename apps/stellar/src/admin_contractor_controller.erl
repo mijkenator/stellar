@@ -19,7 +19,7 @@ init(Req, Opts) -> utils_controller:controller_init(admin_contractor_controller,
 -spec is_auth_method(binary()) -> boolean().
 is_auth_method(Action) when is_binary(Action) ->
 	lists:member(Action, [
-        <<"invite_contractor">> 
+        <<"invite_contractor">>, <<"get_contractors">>
     ]).
 
 
@@ -52,8 +52,8 @@ action(<<"get_contractors">> = A, _JSON, Req, Opts, {auth, SData, _SID}) ->
         UT 	  = proplists:get_value(<<"user_type">>, SData),
         lager:debug("ASC ~p ~p", [A, {AccountId, UT}]),
         UT =:= 2 orelse throw({error, bad_user_type }),
-        model_contractor:get_contractors(),
-        ?OKRESP(A, [], Req, Opts)
+        Ret = model_contractor:get_contractors(),
+        ?OKRESP(A, Ret, Req, Opts)
     catch
         E:R ->
             lager:error("ACCICERR ~p ~p",[E,R]),
