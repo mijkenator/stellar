@@ -9,6 +9,7 @@
     ,get_details/1
     ,set_details/8
     ,get_users/0
+    ,create_order/9
 ]).
 
 signup(Login, Password) ->
@@ -79,4 +80,9 @@ get_users() ->
             [{lists:zip(F,P)}||P<-Ret]
         ;_ -> []
 	end.
+
+create_order(Uid, Cid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax) ->
+    emysql:execute(mysqlpool, 
+        <<"insert into orders (uid, cid, sid, order_ontime, number_ofservices, number_ofcontractors, cost, gratuity, tax) ",
+           "values (?,?,?,?,?,?,?,?,?)">>, [Uid, Cid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax]).
 

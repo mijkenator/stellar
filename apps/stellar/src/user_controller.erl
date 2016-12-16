@@ -18,7 +18,7 @@ init(Req, Opts) -> utils_controller:controller_init(user_controller, Req, Opts).
 
 -spec is_auth_method(binary()) -> boolean().
 is_auth_method(Action) when is_binary(Action) ->
-	lists:member(Action, [<<"delete">>, <<"get_details">>, <<"set_details">>]).
+	lists:member(Action, [<<"delete">>, <<"get_details">>, <<"set_details">>, <<"create_order">>]).
 
 
 get_action(_, Req, Opts, _) ->
@@ -67,6 +67,30 @@ action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"set_details">> ->
         [Name, Street, Apt, Zip, City, State, Phone] = nwapi_utils:get_json_params(JSON, Params),
         lager:debug("UCD: ~p", [AccountId]),
 	    Ret = model_user:set_details(AccountId, Name, Street, Apt, Zip, City, State, Phone),
+        lager:debug("UCD RET: ~p", [Ret]),
+        ?OKRESP(A, [], Req, Opts)
+    catch
+        E:R ->
+            lager:error("CU WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
+action(<<"create_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        Params = [ 
+            {"contractor_id",           [undefined, required, undefined ]},
+            {"service_id",              [undefined, required, undefined ]},
+            {"service_ontime",          [undefined, required, undefined ]},
+            {"number_of_services",      [undefined, required, undefined ]},
+            {"number_of_contractors",   [undefined, required, undefined ]},
+            {"cost",                    [undefined, required, undefined ]}
+        ],
+        lager:debug("~p Params1: ~p", [A, Params]),
+        [Cid, Sid, DTime, ServNum, CNum, Cost] = nwapi_utils:get_json_params(JSON, Params),
+        lager:debug("UCD: ~p", [AccountId]),
+        Gratuity = 0,
+        Tax = 0,
+        Ret = model_user:create_order(AccountId, Cid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax),
         lager:debug("UCD RET: ~p", [Ret]),
         ?OKRESP(A, [], Req, Opts)
     catch
