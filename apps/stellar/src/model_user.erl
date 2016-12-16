@@ -8,6 +8,7 @@
 	,delete_user/1
     ,get_details/1
     ,set_details/8
+    ,get_users/0
 ]).
 
 signup(Login, Password) ->
@@ -69,4 +70,13 @@ set_details(Id, Name, Street, Apt, Zip, City, State, Phone) ->
     SQL = <<"update user set ",SQLa/binary," where id=?">>,
     Params = Pa ++ [Id],
     emysql:execute(mysqlpool, SQL, Params).
+
+get_users() ->
+	case emysql:execute(mysqlpool, <<"select ifnull(name,''), ifnull(street,''), ifnull(apt,''), ifnull(zip,''), ifnull(city,''), ",
+                "ifnull(state,''), ifnull(phone,''), login from user where utype in (0,1) ">>, []) of
+		{result_packet,_,_,Ret,_} ->
+            F = [<<"name">>, <<"street">>, <<"apt">>, <<"zip">>, <<"city">>, <<"state">>, <<"phone">>, <<"email">>],
+            [{lists:zip(F,P)}||P<-Ret]
+        ;_ -> []
+	end.
 

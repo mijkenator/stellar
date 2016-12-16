@@ -22,6 +22,7 @@ start(_StartType, _StartArgs) ->
 			{"/contractor", contractor_controller,  []},
 			{"/admin/service", admin_service,  []},
 			{"/admin/contractor", admin_contractor_controller,  []},
+			{"/admin/user", admin_user_controller,  []},
             {"/upload/[...]", uploader_controller, []}
 		]}
     ]),
