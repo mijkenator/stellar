@@ -46,6 +46,19 @@ action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"invite_contractor"
             lager:error("ACCICERR ~p ~p",[E,R]),
             nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
     end;
+action(<<"get_contractors">> = A, _JSON, Req, Opts, {auth, SData, _SID}) ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        UT 	  = proplists:get_value(<<"user_type">>, SData),
+        lager:debug("ASC ~p ~p", [A, {AccountId, UT}]),
+        UT =:= 2 orelse throw({error, bad_user_type }),
+        model_contractor:get_contractors(),
+        ?OKRESP(A, [], Req, Opts)
+    catch
+        E:R ->
+            lager:error("ACCICERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
 
 action(_Action, _, Req, Opts, _) ->
     {ok, ?NWR(reply, [<<"CUserA UNKCOMMAND\nNOK">>, Req]), Opts}.
