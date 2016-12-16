@@ -14,9 +14,9 @@
 ]).
 
 get_categories() ->
-	case emysql:execute(mysqlpool, <<"select id, name from service_category">>, []) of
+	case emysql:execute(mysqlpool, <<"select id, name, img from service_category">>, []) of
 		{result_packet,_,_,Ret,_} ->
-            F = [<<"id">>, <<"name">>],
+            F = [<<"id">>, <<"name">>, <<"img">>],
             [{lists:zip(F,P)}||P<-Ret]
         ;_ -> []
 	end.
