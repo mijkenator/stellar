@@ -23,6 +23,11 @@ handle(Req0, State) ->
             {Ret1, Req02} = multipart(Req, [], <<"upload-service">>),
             Ret0 = Ret1 ++ SData, 
             upload_service(Ret0),
+            {<<"upload-service">>,Ret0, Req02};
+        <<"/upload/contractor">> ->
+            {Ret1, Req02} = multipart(Req, [], <<"upload-service">>),
+            Ret0 = Ret1 ++ SData, 
+            upload_contractor(Ret0),
             {<<"upload-service">>,Ret0, Req02}
         ;_UU -> 
             lager:debug("UU: ~p ", [_UU]),
@@ -47,6 +52,14 @@ upload_service_category(Params) ->
             ;R -> R
     end,
     emysql:execute(mysqlpool, <<"update service_category set img=? where id=?">>, [Img0, Id]).
+
+upload_contractor(Params) -> 
+    [Img, Id] = [proplists:get_value(X, Params, <<>>) || X <- [<<"mkh_image">>, <<"account_id">>]],
+    Img0 = case Img of
+            <<"/usr/share/nginx/html", R/binary>> -> R
+            ;R -> R
+    end,
+    emysql:execute(mysqlpool, <<"update user set photo=? where id=?">>, [Img0, Id]).
 
 upload_service(Params) -> 
     [Img, Id] = [proplists:get_value(X, Params, <<>>) || X <- [<<"mkh_image">>, <<"id">> ]],
