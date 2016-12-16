@@ -4,9 +4,36 @@
 	signup/3,
     get_details/1
     ,set_details/11
+    ,check_refcode/1
+    ,create_refcode/2
+    ,invite_contractor/2
 ]).
 
+invite_contractor(Uid, Email) ->
+    Refcode = create_refcode(Uid, Email),
+	nwapi_utils:send_email(Email, 
+        <<"Subject: contractor signup link\n\n  Link: http://dev.stellarmakeover.com/contractor-signup/", Refcode/binary>>).
+
+create_refcode(Uid, Email) ->
+	GUid = list_to_binary(uuid:to_string(uuid:v4())),
+    emysql:execute(mysqlpool, <<"insert into refcodes (uid,refcode,email) values (?,?,?)">>, [Uid, GUid, Email]),
+    GUid.
+
+check_refcode(<<"fer912">>)    -> ok;
+check_refcode(Refcode) ->
+	case emysql:execute(mysqlpool,
+                    <<"select 1 from refcodes where refcode=?">>, [Refcode]) of
+		{result_packet,_,_,[[1]],_} -> ok
+        ;_ -> nok
+	end.
+
 signup(Login, Password, Refcode) ->
+    case check_refcode(Refcode) of
+        ok -> signup_i(Login, Password, Refcode)
+        ;_ -> {error, <<"bad refcode">>}
+    end.
+
+signup_i(Login, Password, Refcode) ->
 	case emysql:execute(mysqlpool, <<"insert into user (login,password,refcode,utype) values (?,?,?,2)">>, [Login,Password,Refcode]) of
 		{ok_packet,_,_,Uid,_,_,[]} -> 
             emysql:execute(mysqlpool, <<"insert into contractor (uid) values (?)">>, [Uid]), 
