@@ -18,7 +18,7 @@ init(Req, Opts) -> utils_controller:controller_init(user_controller, Req, Opts).
 
 -spec is_auth_method(binary()) -> boolean().
 is_auth_method(Action) when is_binary(Action) ->
-	lists:member(Action, [<<"delete">>, <<"get_details">>, <<"set_details">>, <<"create_order">>]).
+	lists:member(Action, [<<"delete">>, <<"get_details">>, <<"set_details">>, <<"create_order">>, <<"get_orders">>]).
 
 
 get_action(_, Req, Opts, _) ->
@@ -32,6 +32,18 @@ action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"delete">> ->
         AccountId = proplists:get_value(<<"account_id">>, SData),
         lager:debug("UCD: ~p", [AccountId]),
 	Ret = model_user:delete_user(AccountId),
+        lager:debug("UCD RET: ~p", [Ret]),
+        ?OKRESP(A, [], Req, Opts)
+    catch
+        E:R ->
+            lager:error("CU WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
+action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_orders">> ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        lager:debug("UCD: ~p", [AccountId]),
+    	Ret = model_order:admin_get_orders(AccountId, undefined),
         lager:debug("UCD RET: ~p", [Ret]),
         ?OKRESP(A, [], Req, Opts)
     catch
