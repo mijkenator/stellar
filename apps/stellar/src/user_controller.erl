@@ -51,6 +51,21 @@ action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_orders">> ->
             lager:error("CU WREFERR ~p ~p",[E,R]),
             nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
     end;
+action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"cancel_order">> ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        lager:debug("UCD: ~p", [AccountId]),
+        Params = [ 
+            {"order_id",    [undefined, required, undefined ]}],
+        [Oid] = nwapi_utils:get_json_params(JSON, Params),
+    	Ret = model_order:cancel_order(AccountId, Oid),
+        lager:debug("UCD RET: ~p", [Ret]),
+        ?OKRESP(A, [], Req, Opts)
+    catch
+        E:R ->
+            lager:error("CU WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
 action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_details">> ->
     try
         AccountId = proplists:get_value(<<"account_id">>, SData),
