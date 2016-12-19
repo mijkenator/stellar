@@ -78,7 +78,8 @@ nonauth_action(<<"signup">> = A, JSON, Req, Opts, _Session) ->
                 {"refcode",     [undefined, required, undefined ]},
                 {"password",    [undefined, required, undefined ]}
             ],
-            [Login, Pwd, Refcode] = nwapi_utils:get_json_params(JSON, Params),
+        [Login, Refcode, Pwd] = nwapi_utils:get_json_params(JSON, Params),
+        lager:debug("UCSIGNUPs: ~p", []),
         case model_contractor:signup(Login, Pwd, Refcode) of
            {ok,Uid} -> ?OKRESP(A, [Uid], Req, Opts);
            {error, Error} -> ?ERRRESP(Error, A, Req, Opts)
