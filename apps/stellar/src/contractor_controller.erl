@@ -58,7 +58,7 @@ action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_details">> ->
         AccountId = proplists:get_value(<<"account_id">>, SData),
         UT 	  = proplists:get_value(<<"user_type">>, SData),
         lager:debug("UCD: ~p", [AccountId]),
-        UT =:= 3 orelse throw({error, bad_user_type }),
+        UT > 1 orelse throw({error, bad_user_type }),
 	    Ret = model_contractor:get_details(AccountId),
         lager:debug("UCD RET: ~p", [Ret]),
         ?OKRESP(A, Ret, Req, Opts)
