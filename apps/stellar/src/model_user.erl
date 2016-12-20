@@ -82,6 +82,7 @@ get_users() ->
 	end.
 
 create_order(Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax) ->
+    orders_queue:update_orders(),
     emysql:execute(mysqlpool, 
         <<"insert into orders (uid, sid, order_ontime, number_ofservices, number_ofcontractors, cost, gratuity, tax) ",
            "values (?,?,?,?,?,?,?,?)">>, [Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax]).

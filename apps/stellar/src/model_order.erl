@@ -58,8 +58,8 @@ cancel_order(Uid, Oid) ->
       true ->
         case lists:member(Status, [<<"pending">>, <<"upcoming">>]) of
             true -> 
-                emysql:execute(mysqlpool,<<"update orders set status = 'cancelled' where uid=? and id=?">>,
-                [Uid, Oid])
+                emysql:execute(mysqlpool,<<"update orders set status = 'cancelled' where uid=? and id=?">>,[Uid, Oid]),
+                orders_queue:update_orders()
             ;_   -> {error, non_cancel_status}
         end
       ;_ -> {error, another_user_order} 

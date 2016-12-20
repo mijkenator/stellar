@@ -34,7 +34,7 @@ handle_call(_Request, _From, State) ->
     {reply, ignored, State}.
 
 handle_cast({cmd, update_orders}, State) ->
-    _GetNewOrders = model_order:get_new_orders(),
+    contractor_ws_handler:notify(<<"new_orders">>, <<"new_orders">>),
     {noreply, State};
 handle_cast(_Msg, State) ->
     {noreply, State}.

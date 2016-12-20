@@ -91,7 +91,7 @@ action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"take_order">> ->
                 {"order_id",    [undefined, required, undefined ]}
             ],
         [OrderID] = nwapi_utils:get_json_params(JSON, Params),
-	    Ret = model_order:take_order(AccountId, OrderID),
+	    Ret = orders_queue:take_order(AccountId, OrderID),
         lager:debug("UCD RET: ~p", [Ret]),
         ?OKRESP(A, Ret, Req, Opts)
     catch
