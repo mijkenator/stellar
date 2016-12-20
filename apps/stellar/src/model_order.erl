@@ -3,6 +3,7 @@
 -export([
     admin_get_orders/2,
     cancel_order/2
+    ,take_order/2
 ]).
 
 admin_get_orders(Uid, Cid) ->
@@ -50,3 +51,13 @@ cancel_order(Uid, Oid) ->
         end
       ;_ -> {error, another_user_order} 
     end.
+
+take_order(Cid, Oid) when is_binary(Cid) -> take_order(binary_to_integer(Cid), Oid);
+take_order(Cid, Oid) ->
+    O = get_order(Oid),
+    OCid   = proplists:get_value(<<"contractor_id">>, O, undefined),
+    case OCid == undefined of
+      true -> emysql:execute(mysqlpool,<<"update orders set status = 'upcoming', cid = ? where id=?">>, [Cid, Oid])
+      ;_ ->   {error, another_user_order} 
+    end.
+

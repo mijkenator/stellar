@@ -17,7 +17,7 @@ init(Req, Opts) -> utils_controller:controller_init(contractor_controller, Req, 
 
 -spec is_auth_method(binary()) -> boolean().
 is_auth_method(Action) when is_binary(Action) ->
-	lists:member(Action, [<<"get_details">>, <<"set_details">>]).
+	lists:member(Action, [<<"get_details">>, <<"set_details">>, <<"get_orders">>, <<"take_order">>]).
 
 
 get_action(_, Req, Opts, _) ->
@@ -74,6 +74,24 @@ action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_orders">> ->
         lager:debug("UCD: ~p", [AccountId]),
         UT > 1 orelse throw({error, bad_user_type }),
 	    Ret = model_order:admin_get_orders(undefined, AccountId),
+        lager:debug("UCD RET: ~p", [Ret]),
+        ?OKRESP(A, Ret, Req, Opts)
+    catch
+        E:R ->
+            lager:error("CU WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
+action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"take_order">> ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        UT 	  = proplists:get_value(<<"user_type">>, SData),
+        lager:debug("UCD: ~p", [AccountId]),
+        UT > 1 orelse throw({error, bad_user_type }),
+        Params = [ 
+                {"order_id",    [undefined, required, undefined ]}
+            ],
+        [OrderID] = nwapi_utils:get_json_params(JSON, Params),
+	    Ret = model_order:take_order(AccountId, OrderID),
         lager:debug("UCD RET: ~p", [Ret]),
         ?OKRESP(A, Ret, Req, Opts)
     catch
