@@ -67,6 +67,20 @@ action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_details">> ->
             lager:error("CU WREFERR ~p ~p",[E,R]),
             nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
     end;
+action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_orders">> ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        UT 	  = proplists:get_value(<<"user_type">>, SData),
+        lager:debug("UCD: ~p", [AccountId]),
+        UT > 1 orelse throw({error, bad_user_type }),
+	    Ret = model_order:admin_get_orders(undefined, AccountId),
+        lager:debug("UCD RET: ~p", [Ret]),
+        ?OKRESP(A, Ret, Req, Opts)
+    catch
+        E:R ->
+            lager:error("CU WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
 action(_Action, _, Req, Opts, _) ->
     {ok, ?NWR(reply, [<<"CUserA UNKCOMMAND\nNOK">>, Req]), Opts}.
 
