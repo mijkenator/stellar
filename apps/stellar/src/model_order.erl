@@ -4,6 +4,7 @@
     admin_get_orders/2,
     cancel_order/2
     ,take_order/2
+    ,get_new_orders/0
 ]).
 
 admin_get_orders(Uid, Cid) ->
@@ -17,6 +18,18 @@ admin_get_orders(Uid, Cid) ->
             <<"select o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
             " o.number_ofservices, o.number_ofcontractors, o.status ",
             " from orders o ", ExtraSQL/binary>>, Params) of
+		{result_packet,_,_,Ret,_} ->
+            F = [<<"user_id">>, <<"contractor_id">>, <<"service_id">>, <<"cost">>, <<"gratuity">>,
+            <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>],
+            [{lists:zip(F,P)}||P<-Ret]
+        ;_ -> []
+	end.
+
+get_new_orders() ->
+	case emysql:execute(mysqlpool,
+            <<"select o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
+            " o.number_ofservices, o.number_ofcontractors, o.status ",
+            " from orders o where o.cid is null">>, []) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"user_id">>, <<"contractor_id">>, <<"service_id">>, <<"cost">>, <<"gratuity">>,
             <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>],
@@ -58,6 +71,6 @@ take_order(Cid, Oid) ->
     OCid   = proplists:get_value(<<"contractor_id">>, O, undefined),
     case OCid == undefined of
       true -> emysql:execute(mysqlpool,<<"update orders set status = 'upcoming', cid = ? where id=?">>, [Cid, Oid])
-      ;_ ->   {error, another_user_order} 
+      ;_ ->   {error, already_taken} 
     end.
 

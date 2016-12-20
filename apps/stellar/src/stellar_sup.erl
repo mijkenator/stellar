@@ -35,8 +35,11 @@ init([]) ->
         ]]},
         permanent, 60000, worker, [mcd_cluster]},
 
-    {ok, { {one_for_all, 0, 1}, [
+    _OrdersQueue = {orders_queue, {orders_queue, start_link, []}, permanent, 60000, worker, [orders_queue]},
+
+    {ok, { {one_for_all, 5, 10}, [
 	_MemCached
+    ,_OrdersQueue
 
    ]} }.
 

@@ -55,7 +55,11 @@ update() ->
 	    {match, [_,{B,L},{B1,L1}]} ->
 		P = string:substr(File, B+1, L),
 		M = string:substr(File, B1+1, L1),
-		code:purge(list_to_existing_atom(M)),
+        try list_to_existing_atom(M) of 
+            Atom -> code:purge(Atom)
+        catch
+            _:_ -> ok
+        end,
 		LR = code:load_abs(P++M),
 		lager:debug("Reloaded ~p -> ~p", [M, LR])
 	    ;_ -> ok
