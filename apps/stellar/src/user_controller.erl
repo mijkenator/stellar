@@ -105,7 +105,6 @@ action(<<"create_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
     try
         AccountId = proplists:get_value(<<"account_id">>, SData),
         Params = [ 
-            {"contractor_id",           [undefined, required, undefined ]},
             {"service_id",              [undefined, required, undefined ]},
             {"service_ontime",          [undefined, required, undefined ]},
             {"number_of_services",      [undefined, required, undefined ]},
@@ -113,11 +112,11 @@ action(<<"create_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
             {"cost",                    [undefined, required, undefined ]}
         ],
         lager:debug("~p Params1: ~p", [A, Params]),
-        [Cid, Sid, DTime, ServNum, CNum, Cost] = nwapi_utils:get_json_params(JSON, Params),
+        [Sid, DTime, ServNum, CNum, Cost] = nwapi_utils:get_json_params(JSON, Params),
         lager:debug("UCD: ~p", [AccountId]),
         Gratuity = 0,
         Tax = 0,
-        Ret = model_user:create_order(AccountId, Cid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax),
+        Ret = model_user:create_order(AccountId, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax),
         lager:debug("UCD RET: ~p", [Ret]),
         ?OKRESP(A, [], Req, Opts)
     catch
