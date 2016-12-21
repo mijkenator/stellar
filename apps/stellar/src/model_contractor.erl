@@ -3,7 +3,7 @@
 -export([
 	signup/3,
     get_details/1
-    ,set_details/11
+    ,set_details/12
     ,check_refcode/1
     ,create_refcode/2
     ,invite_contractor/2
@@ -55,11 +55,10 @@ get_details(Uid) ->
         ;_ -> []
 	end.
 
-
-set_details(Id, FName, LName, Street, Apt, City, State, CPhone, BankR, BankA, Phone) ->
+set_details(Id, FName, LName, Street, Apt, City, Zip, State, CPhone, BankR, BankA, Phone) ->
     P = [{<<"name">>, <<FName/binary," ", LName/binary>>}, 
          {<<"phone">>, Phone},
-         {<<"street">>, Street}, {<<"apt">>, Apt}, {<<"city">>, City}, {<<"state">>, State}],
+         {<<"street">>, Street}, {<<"apt">>, Apt}, {<<"city">>, City}, {<<"state">>, State}, {<<"zip">>, Zip}],
     Fun = fun({_, undefined}, A) -> A;
              ({Fn,V}, {S,Pr})    -> {S++[<<Fn/binary,"=?">>],Pr++[V]} end,
     {SQLl,Pa} = lists:foldl(Fun, {[], []}, P),

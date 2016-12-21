@@ -34,8 +34,8 @@ action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"set_details">> ->
             {"lname",           [<<>>, notrequired, undefined ]},
             {"street",          [undefined, notrequired, undefined ]},
             {"apt",             [undefined, notrequired, undefined ]},
-            {"zip",             [undefined, notrequired, undefined ]},
             {"city",            [undefined, notrequired, undefined ]},
+            {"zip",             [undefined, notrequired, undefined ]},
             {"state",           [undefined, notrequired, undefined ]},
             {"cell_phone",      [undefined, notrequired, undefined ]},
             {"bank_routing",    [undefined, notrequired, undefined ]},
@@ -43,9 +43,9 @@ action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"set_details">> ->
             {"phone",           [undefined, notrequired, undefined ]}
         ],
         lager:debug("~p Params1: ~p", [A, Params]),
-        [FName, LName, Street, Apt, City, State, CPhone, BankR, BankA, Phone] = nwapi_utils:get_json_params(JSON, Params),
+        [FName, LName, Street, Apt, City, Zip, State, CPhone, BankR, BankA, Phone] = nwapi_utils:get_json_params(JSON, Params),
         lager:debug("UCD: ~p", [AccountId]),
-	    Ret = model_contractor:set_details(AccountId, FName, LName, Street, Apt, City, State, CPhone, BankR, BankA, Phone),
+	    Ret = model_contractor:set_details(AccountId, FName, LName, Street, Apt, City, Zip, State, CPhone, BankR, BankA, Phone),
         lager:debug("UCD RET: ~p", [Ret]),
         ?OKRESP(A, [], Req, Opts)
     catch
