@@ -35,7 +35,7 @@ signup(Login, Password, Refcode) ->
     end.
 
 signup_i(Login, Password, Refcode) ->
-	case emysql:execute(mysqlpool, <<"insert into user (login,password,refcode,utype) values (?,?,?,2)">>, [Login,Password,Refcode]) of
+	case emysql:execute(mysqlpool, <<"insert into user (login,password,refcode,utype) values (?,?,?,3)">>, [Login,Password,Refcode]) of
 		{ok_packet,_,_,Uid,_,_,[]} -> 
             emysql:execute(mysqlpool, <<"insert into contractor (uid) values (?)">>, [Uid]), 
             {ok, Uid};
