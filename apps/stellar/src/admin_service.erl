@@ -37,7 +37,7 @@ action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_categories">>
         AccountId = proplists:get_value(<<"account_id">>, SData),
         UT 	  = proplists:get_value(<<"user_type">>, SData),
         lager:debug("ASC ~p ~p", [A, {AccountId, UT}]),
-        UT =:= 2 orelse throw({error, bad_user_type }),
+        %UT =:= 2 orelse throw({error, bad_user_type }),
         Ret = model_service:get_categories(),
         lager:debug("ASC ~p RET: ~p", [A, Ret]),
         ?OKRESP(A, Ret, Req, Opts)
@@ -103,7 +103,7 @@ action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_services">> ->
         AccountId = proplists:get_value(<<"account_id">>, SData),
         UT 	  = proplists:get_value(<<"user_type">>, SData),
         lager:debug("ASC ~p ~p", [A, {AccountId, UT}]),
-        UT =:= 2 orelse throw({error, bad_user_type }),
+        %UT =:= 2 orelse throw({error, bad_user_type }),
 	    Params = [ 
             {"cat_id",      [<<"0">>, required, undefined ]}
         ],
