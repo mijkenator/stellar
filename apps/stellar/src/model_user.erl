@@ -10,6 +10,7 @@
     ,set_details/8
     ,get_users/0
     ,create_order/8
+    ,create_order/16
 ]).
 
 signup(Login, Password) ->
@@ -86,4 +87,12 @@ create_order(Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax) ->
     emysql:execute(mysqlpool, 
         <<"insert into orders (uid, sid, order_ontime, number_ofservices, number_ofcontractors, cost, gratuity, tax) ",
            "values (?,?,?,?,?,?,?,?)">>, [Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax]).
+
+create_order(Uid, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost, Gratuity, Tax) ->
+    orders_queue:update_orders(),
+    emysql:execute(mysqlpool, 
+        <<"insert into orders (uid, sid, order_ontime, number_ofservices, number_ofcontractors, cost, gratuity, tax, ",
+                "phone, email, street, apt, city, state, cell_phone, zip ) ",
+           "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)">>, [Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax, 
+                                                        Phone, Email, Street, Apt, City, State, CPhone, Zip]).
 
