@@ -11,6 +11,7 @@
     ,get_users/0
     ,create_order/8
     ,create_order/16
+    ,update_order/16
 ]).
 
 signup(Login, Password) ->
@@ -95,4 +96,17 @@ create_order(Uid, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, St
                 "phone, email, street, apt, city, state, cell_phone, zip ) ",
            "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)">>, [Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax, 
                                                         Phone, Email, Street, Apt, City, State, CPhone, Zip]).
+
+update_order(OrderId, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost, Gratuity, Tax) ->
+    P = [{<<"sip">>, Sid},{<<"order_ontime">>, DTime},{<<"number_ofservices">>, ServNum}, 
+         {<<"number_ofcontractors">>, CNum}, {<<"cost">>, Cost}, {<<"gratuity">>, Gratuity}, {<<"tax">>, Tax}, {<<"apt">>,Apt},
+         {<<"zip">>, Zip},{<<"city">>, City},{<<"state">>, State},{<<"cell_phone">>, CPhone}, 
+         {<<"street">>, Street},{<<"phone">>, Phone}, {<<"email">>, Email}],
+    Fun = fun({_, undefined}, A) -> A;
+             ({Fn,V}, {S,Pr})    -> {S++[<<Fn/binary,"=?">>],Pr++[V]} end,
+    {SQLl,Pa} = lists:foldl(Fun, {[], []}, P),
+    SQLa = list_to_binary(lists:join(<<",">>, SQLl)), 
+    SQL = <<"update orders set ",SQLa/binary," where id=?">>,
+    Params = Pa ++ [OrderId],
+    emysql:execute(mysqlpool, SQL, Params).
 

@@ -18,7 +18,8 @@ init(Req, Opts) -> utils_controller:controller_init(user_controller, Req, Opts).
 
 -spec is_auth_method(binary()) -> boolean().
 is_auth_method(Action) when is_binary(Action) ->
-	lists:member(Action, [<<"delete">>, <<"get_details">>, <<"set_details">>, <<"create_order">>, <<"get_orders">>]).
+	lists:member(Action, [<<"delete">>, <<"get_details">>, <<"set_details">>, 
+                          <<"create_order">>, <<"get_orders">>, <<"update_orders">>]).
 
 
 get_action(_, Req, Opts, _) ->
@@ -120,11 +121,43 @@ action(<<"create_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
             {"cost",                    [undefined, required, undefined ]}
         ],
         lager:debug("~p Params1: ~p", [A, Params]),
-        [Sid, DTime, ServNum, CNum, Cost] = nwapi_utils:get_json_params(JSON, Params),
+        [Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost] = nwapi_utils:get_json_params(JSON, Params),
         lager:debug("UCD: ~p", [AccountId]),
         Gratuity = 0,
         Tax = 0,
-        Ret = model_user:create_order(AccountId, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax),
+        Ret = model_user:create_order(AccountId, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost, Gratuity, Tax),
+        lager:debug("UCD RET: ~p", [Ret]),
+        ?OKRESP(A, [], Req, Opts)
+    catch
+        E:R ->
+            lager:error("CU WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
+action(<<"update_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        Params = [ 
+            {"order_id",                [undefined, required, undefined ]},
+            {"service_id",              [undefined, nonrequired, undefined ]},
+            {"service_ontime",          [undefined, nonrequired, undefined ]},
+            {"number_of_services",      [undefined, nonrequired, undefined ]},
+            {"number_of_contractors",   [undefined, nonrequired, undefined ]},
+            {"phone",                   [undefined, nonrequired, undefined ]},
+            {"email",                   [undefined, nonrequired, undefined ]},
+            {"street",                  [undefined, nonrequired, undefined ]},
+            {"apt",                     [undefined, nonrequired, undefined ]},
+            {"city",                    [undefined, nonrequired, undefined ]},
+            {"state",                   [undefined, nonrequired, undefined ]},
+            {"cell_phone",              [undefined, nonrequired, undefined ]},
+            {"zip",                     [undefined, nonrequired, undefined ]},
+            {"cost",                    [undefined, nonrequired, undefined ]}
+        ],
+        lager:debug("~p Params1: ~p", [A, Params]),
+        [OrderId, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost] = nwapi_utils:get_json_params(JSON, Params),
+        lager:debug("UCD: ~p", [AccountId]),
+        Gratuity = 0,
+        Tax = 0,
+        Ret = model_user:update_order(OrderId, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost, Gratuity, Tax),
         lager:debug("UCD RET: ~p", [Ret]),
         ?OKRESP(A, [], Req, Opts)
     catch
