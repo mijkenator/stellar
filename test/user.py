@@ -38,8 +38,9 @@ print(r.text)
 
 #payload = {'request' : '{"type":"create_order", "contractor_id":4, "service_id":3, "service_ontime":"2016-12-31 12:00:00",\
 #                         "number_of_services":1, "number_of_contractors":1, "cost":99}'}
-#r = s.post(url, data=payload)
-#print(r.text)
+payload = {'request' : '{"type":"create_order","service_id":"3","service_ontime":"2016-12-26 12:15:00","number_of_services":1,"number_of_contractors":1,"cost":9}'}
+r = s.post(url, data=payload)
+print(r.text)
 
 payload = {'request' : '{"type":"get_orders"}'}
 r = s.post(url, data=payload)

@@ -46,7 +46,7 @@ action(A, _JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"get_orders">> ->
         lager:debug("UCD: ~p", [AccountId]),
     	Ret = model_order:admin_get_orders(AccountId, undefined),
         lager:debug("UCD RET: ~p", [Ret]),
-        ?OKRESP(A, [], Req, Opts)
+        ?OKRESP(A, Ret, Req, Opts)
     catch
         E:R ->
             lager:error("CU WREFERR ~p ~p",[E,R]),
@@ -108,17 +108,17 @@ action(<<"create_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
         Params = [ 
             {"service_id",              [undefined, required, undefined ]},
             {"service_ontime",          [undefined, required, undefined ]},
-            {"number_of_services",      [undefined, required, undefined ]},
-            {"number_of_contractors",   [undefined, required, undefined ]},
-            {"phone",                   [undefined, required, undefined ]},
-            {"email",                   [undefined, required, undefined ]},
-            {"street",                  [undefined, required, undefined ]},
-            {"apt",                     [undefined, required, undefined ]},
-            {"city",                    [undefined, required, undefined ]},
-            {"state",                   [undefined, required, undefined ]},
-            {"cell_phone",              [undefined, required, undefined ]},
-            {"zip",                     [undefined, required, undefined ]},
-            {"cost",                    [undefined, required, undefined ]}
+            {"number_of_services",      [1, required, undefined ]},
+            {"number_of_contractors",   [1, required, undefined ]},
+            {"phone",                   [<<>>, notrequired, undefined ]},
+            {"email",                   [<<>>, notrequired, undefined ]},
+            {"street",                  [<<>>, notrequired, undefined ]},
+            {"apt",                     [<<>>, notrequired, undefined ]},
+            {"city",                    [<<>>, notrequired, undefined ]},
+            {"state",                   [<<>>, notrequired, undefined ]},
+            {"cell_phone",              [<<>>, notrequired, undefined ]},
+            {"zip",                     [<<>>, notrequired, undefined ]},
+            {"cost",                    [0,    required, undefined ]}
         ],
         lager:debug("~p Params1: ~p", [A, Params]),
         [Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost] = nwapi_utils:get_json_params(JSON, Params),
@@ -130,7 +130,7 @@ action(<<"create_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
         ?OKRESP(A, [], Req, Opts)
     catch
         E:R ->
-            lager:error("CU WREFERR ~p ~p",[E,R]),
+            lager:error("CUCOERR: ~p ~p",[E,R]),
             nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
     end;
 action(<<"update_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
