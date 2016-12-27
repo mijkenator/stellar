@@ -84,18 +84,21 @@ get_users() ->
 	end.
 
 create_order(Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax) ->
-    orders_queue:update_orders(),
-    emysql:execute(mysqlpool, 
+    Ret = emysql:execute(mysqlpool, 
         <<"insert into orders (uid, sid, order_ontime, number_ofservices, number_ofcontractors, cost, gratuity, tax) ",
-           "values (?,?,?,?,?,?,?,?)">>, [Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax]).
+           "values (?,?,?,?,?,?,?,?)">>, [Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax]),
+    orders_queue:update_orders(),
+    Ret.
+
 
 create_order(Uid, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost, Gratuity, Tax) ->
-    orders_queue:update_orders(),
-    emysql:execute(mysqlpool, 
+    Ret = emysql:execute(mysqlpool, 
         <<"insert into orders (uid, sid, order_ontime, number_ofservices, number_ofcontractors, cost, gratuity, tax, ",
                 "phone, email, street, apt, city, state, cell_phone, zip ) ",
            "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)">>, [Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax, 
-                                                        Phone, Email, Street, Apt, City, State, CPhone, Zip]).
+                                                        Phone, Email, Street, Apt, City, State, CPhone, Zip]),
+    orders_queue:update_orders(),
+    Ret.
 
 update_order(OrderId, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost, Gratuity, Tax) ->
     P = [{<<"sip">>, Sid},{<<"order_ontime">>, DTime},{<<"number_ofservices">>, ServNum}, 
@@ -108,5 +111,7 @@ update_order(OrderId, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City
     SQLa = list_to_binary(lists:join(<<",">>, SQLl)), 
     SQL = <<"update orders set ",SQLa/binary," where id=?">>,
     Params = Pa ++ [OrderId],
-    emysql:execute(mysqlpool, SQL, Params).
+    Ret = emysql:execute(mysqlpool, SQL, Params),
+    orders_queue:update_orders(),
+    Ret.
 
