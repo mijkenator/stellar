@@ -10,7 +10,9 @@
     get_services/1,
     create_service/6,
     delete_service/1,
-    update_service/7
+    update_service/7,
+
+    get_service/1
 ]).
 
 get_categories() ->
@@ -39,6 +41,17 @@ get_services(Cid) when is_binary(Cid)  ->
     end,
 	case emysql:execute(mysqlpool, <<"select s.id, s.cat_id, s.title, s.description, s.cost, s.duration, ",
                     "s.note, ifnull(s.img,''),c.name from services s left join service_category c on c.id=s.cat_id", E/binary>>, Pa) of
+		{result_packet,_,_,Ret,_} ->
+            F = [<<"id">>, <<"category">>, <<"title">>, <<"description">>, <<"cost">>, 
+                 <<"duration">>, <<"note">>, <<"img">>, <<"category_name">>],
+            [{lists:zip(F,P)}||P<-Ret]
+        ;_ -> []
+	end.
+
+get_service(Sid) ->
+	case emysql:execute(mysqlpool, <<"select s.id, s.cat_id, s.title, s.description, s.cost, s.duration, ",
+                    "s.note, ifnull(s.img,''),c.name from services s left join service_category c on c.id=s.cat_id ",
+                    "where s.id=?">>, [Sid]) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"id">>, <<"category">>, <<"title">>, <<"description">>, <<"cost">>, 
                  <<"duration">>, <<"note">>, <<"img">>, <<"category_name">>],
