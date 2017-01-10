@@ -34,7 +34,7 @@ websocket_handle({text, <<"{\"cmd\":",_/binary>>} = {text, Msg}, State) ->
                 subscribe(<<"new_orders">>),
                 lager:debug("WSH CMD SUBSCR OK",[]),
                 Ret = jiffy:encode({[
-                    {<<"status">>,<<"ok">>}
+                    {<<"orders">>, model_order:get_new_orders()}
                 ]}),
                 {reply, {text, Ret}, State}
         end

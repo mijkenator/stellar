@@ -46,11 +46,13 @@ get_new_orders() ->
 	case emysql:execute(mysqlpool,
             <<"select o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
             " o.number_ofservices, o.number_ofcontractors, o.status ",
+            " o.street, o.apt, o.city, o.state, o.cell_phone, o.zip "
             " from orders o where o.cid is null">>, []) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"user_id">>, <<"contractor_id">>, <<"service_id">>, <<"cost">>, <<"gratuity">>,
-            <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>],
-            [{lists:zip(F,P)}||P<-Ret]
+            <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>,
+            <<"street">>, <<"apt">>, <<"city">>, <<"state">>, <<"cell_phone">>, <<"zip">>],
+            [{lists:zip(F,P)} ++ acs_info(P) ||P<-Ret]
         ;_ -> []
 	end.
 

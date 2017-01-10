@@ -19,7 +19,7 @@ init(Req, Opts) -> utils_controller:controller_init(user_controller, Req, Opts).
 -spec is_auth_method(binary()) -> boolean().
 is_auth_method(Action) when is_binary(Action) ->
 	lists:member(Action, [<<"delete">>, <<"get_details">>, <<"set_details">>, 
-                          <<"create_order">>, <<"get_orders">>, <<"update_orders">>]).
+                          <<"create_order">>, <<"get_orders">>, <<"update_orders">>, <<"cancel_order">>]).
 
 
 get_action(_, Req, Opts, _) ->
