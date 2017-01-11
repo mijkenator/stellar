@@ -5,6 +5,7 @@
     cancel_order/2
     ,take_order/2
     ,get_new_orders/0
+    ,get_order/1
 ]).
 
 admin_get_orders(Uid, Cid) ->
@@ -45,14 +46,14 @@ acs_info(OrderInfo) ->
 get_new_orders() ->
 	case emysql:execute(mysqlpool,
             <<"select o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
-            " o.number_ofservices, o.number_ofcontractors, o.status ",
+            " o.number_ofservices, o.number_ofcontractors, o.status, ",
             " o.street, o.apt, o.city, o.state, o.cell_phone, o.zip "
             " from orders o where o.cid is null">>, []) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"user_id">>, <<"contractor_id">>, <<"service_id">>, <<"cost">>, <<"gratuity">>,
             <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>,
             <<"street">>, <<"apt">>, <<"city">>, <<"state">>, <<"cell_phone">>, <<"zip">>],
-            [{lists:zip(F,P)} ++ acs_info(P) ||P<-Ret]
+            [{lists:zip(F,P) ++ acs_info(P)} ||P<-Ret]
         ;_ -> []
 	end.
 
@@ -70,7 +71,7 @@ get_order(Oid) ->
 
 cancel_order(Uid, Oid) when is_binary(Uid)-> cancel_order(binary_to_integer(Uid), Oid);
 cancel_order(Uid, Oid) ->
-    O = get_order(Oid),
+    [{ O }] = get_order(Oid),
     OUid   = proplists:get_value(<<"user_id">>, O, 0),
     Status = proplists:get_value(<<"status">>, O, 0),
     case OUid == Uid of
@@ -86,7 +87,7 @@ cancel_order(Uid, Oid) ->
 
 take_order(Cid, Oid) when is_binary(Cid) -> orders_queue:take_order(binary_to_integer(Cid), Oid);
 take_order(Cid, Oid) ->
-    O = get_order(Oid),
+    [{ O }] = get_order(Oid),
     OCid   = proplists:get_value(<<"contractor_id">>, O, undefined),
     case OCid == undefined of
       true -> emysql:execute(mysqlpool,<<"update orders set status = 'upcoming', cid = ? where id=?">>, 
