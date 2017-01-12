@@ -6,6 +6,7 @@
     ,take_order/2
     ,get_new_orders/0
     ,get_order/1
+    ,complete_order/2
 ]).
 
 admin_get_orders(Uid, Cid) ->
@@ -47,12 +48,13 @@ get_new_orders() ->
 	case emysql:execute(mysqlpool,
             <<"select o.id, o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
             " o.number_ofservices, o.number_ofcontractors, o.status, ",
-            " o.street, o.apt, o.city, o.state, o.cell_phone, o.zip, u.name "
+            " o.street, o.apt, o.city, o.state, o.cell_phone, o.zip, u.name, u.login, u.phone "
             " from orders o left join user u on u.id = o.uid where o.cid is null">>, []) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"order_id">>, <<"user_id">>, <<"contractor_id">>, <<"service_id">>, <<"cost">>, <<"gratuity">>,
             <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>,
-            <<"street">>, <<"apt">>, <<"city">>, <<"state">>, <<"cell_phone">>, <<"zip">>, <<"name">>],
+            <<"street">>, <<"apt">>, <<"city">>, <<"state">>, <<"cell_phone">>, <<"zip">>, <<"name">>, 
+            <<"email">>, <<"phone">>],
             [{lists:zip(F,P) ++ acs_info(P)} ||P<-Ret]
         ;_ -> []
 	end.
@@ -91,8 +93,12 @@ take_order(Cid, Oid) ->
     OCid   = proplists:get_value(<<"contractor_id">>, O, undefined),
     case OCid == undefined of
       true -> emysql:execute(mysqlpool,<<"update orders set status = 'upcoming', cid = ? where id=?">>, 
-              orders_queue:update_orders(),
-              [Cid, Oid])
+              [Cid, Oid]),
+              orders_queue:update_orders()
       ;_ ->   {error, already_taken} 
     end.
+
+complete_order(Uid, Oid) ->
+    emysql:execute(mysqlpool,<<"update orders set status = 'past' where cid=? and id=?">>,[Uid, Oid]),
+    orders_queue:update_orders().
 
