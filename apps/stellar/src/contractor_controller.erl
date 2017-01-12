@@ -17,7 +17,7 @@ init(Req, Opts) -> utils_controller:controller_init(contractor_controller, Req, 
 
 -spec is_auth_method(binary()) -> boolean().
 is_auth_method(Action) when is_binary(Action) ->
-	lists:member(Action, [<<"get_details">>, <<"set_details">>, <<"get_orders">>, <<"take_order">>]).
+	lists:member(Action, [<<"get_details">>, <<"set_details">>, <<"get_orders">>, <<"take_order">>, <<"complete_order">>]).
 
 
 get_action(_, Req, Opts, _) ->
