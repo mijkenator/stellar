@@ -19,14 +19,20 @@ admin_get_orders(Uid, Cid) ->
 	case emysql:execute(mysqlpool,
             <<"select o.id, o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
             " o.number_ofservices, o.number_ofcontractors, o.status, ",
-            " o.street, o.apt, o.city, o.state, o.cell_phone, o.zip, cast(o.order_done as char) "
-            " from orders o ", ExtraSQL/binary>>, Params) of
+            " o.street, o.apt, o.city, o.state, o.cell_phone, o.zip, cast(o.order_done as char), s.title, c.name,  ",
+            " u.name, u.login ",
+            " from orders o left join services s on s.id = o.sid left join service_category c on c.id = s.cat_id ",
+            " left join user u on u.id = o.uid ",
+            ExtraSQL/binary>>, Params) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"order_id">>, <<"user_id">>, <<"contractor_id">>, <<"service_id">>, <<"cost">>, <<"gratuity">>,
             <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>,
-            <<"street">>, <<"apt">>, <<"city">>, <<"state">>, <<"cell_phone">>, <<"zip">>, <<"finish_time">>],
+            <<"street">>, <<"apt">>, <<"city">>, <<"state">>, <<"cell_phone">>, <<"zip">>, <<"finish_time">>, 
+            <<"service_name">>, <<"category_name">>, <<"user_name">>, <<"user_email">>],
+            
             [{lists:zip(F,P) ++ acs_info(P) }||P<-Ret]
-        ;_ -> []
+        %;_ -> []
+        ;_E -> _E
 	end.
 
 
@@ -34,13 +40,21 @@ acs_info(OrderInfo) ->
     Cid = lists:nth(3, OrderInfo),
     Sid = lists:nth(4, OrderInfo),
 
+    CatName = lists:nth(21, OrderInfo),
+    ServiceName = lists:nth(20, OrderInfo),
+    lager:debug("ACSI1 ~p ", [{CatName, ServiceName}]),
+    <<CaL:1/binary, _/binary>> = CatName,
+    <<SeL:1/binary, _/binary>> = ServiceName,
+    OidB = list_to_binary(integer_to_list(lists:nth(1, OrderInfo))),
+    OA = <<CaL/binary, SeL/binary, "-", OidB/binary>>,
+
     CI = case Cid of
         undefined -> []
         ;_ -> model_contractor:get_details(Cid)
     end,
     SI = model_service:get_service(Sid),
 
-    [{<<"service_info">>, SI}, {<<"contractor_info">>, CI}].
+    [{<<"service_info">>, SI}, {<<"contractor_info">>, CI}, {<<"order_alias">>, OA}].
 
 
 
