@@ -118,14 +118,15 @@ action(<<"create_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
             {"state",                   [<<>>, notrequired, undefined ]},
             {"cell_phone",              [<<>>, notrequired, undefined ]},
             {"zip",                     [<<>>, notrequired, undefined ]},
+            {"location",                     [<<>>, notrequired, undefined ]},
             {"cost",                    [0,    required, undefined ]}
         ],
         lager:debug("~p Params1: ~p", [A, Params]),
-        [Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost] = nwapi_utils:get_json_params(JSON, Params),
+        [Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Location, Cost] = nwapi_utils:get_json_params(JSON, Params),
         lager:debug("UCD: ~p", [AccountId]),
         Gratuity = 0,
         Tax = 0,
-        Ret = model_user:create_order(AccountId, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost, Gratuity, Tax),
+        Ret = model_user:create_order(AccountId, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost, Gratuity, Tax, Location),
         lager:debug("UCD RET: ~p", [Ret]),
         ?OKRESP(A, [], Req, Opts)
     catch

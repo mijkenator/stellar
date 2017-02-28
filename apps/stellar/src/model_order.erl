@@ -20,7 +20,7 @@ admin_get_orders(Uid, Cid) ->
             <<"select o.id, o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
             " o.number_ofservices, o.number_ofcontractors, o.status, ",
             " o.street, o.apt, o.city, o.state, o.cell_phone, o.zip, cast(o.order_done as char), s.title, c.name,  ",
-            " u.name, u.login ",
+            " u.name, u.login, ifnull(o.location,'') ",
             " from orders o left join services s on s.id = o.sid left join service_category c on c.id = s.cat_id ",
             " left join user u on u.id = o.uid ",
             ExtraSQL/binary>>, Params) of
@@ -28,7 +28,7 @@ admin_get_orders(Uid, Cid) ->
             F = [<<"order_id">>, <<"user_id">>, <<"contractor_id">>, <<"service_id">>, <<"cost">>, <<"gratuity">>,
             <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>,
             <<"street">>, <<"apt">>, <<"city">>, <<"state">>, <<"cell_phone">>, <<"zip">>, <<"finish_time">>, 
-            <<"service_name">>, <<"category_name">>, <<"user_name">>, <<"user_email">>],
+            <<"service_name">>, <<"category_name">>, <<"user_name">>, <<"user_email">>, <<"location">>],
             
             [{lists:zip(F,P) ++ acs_info(P) }||P<-Ret]
         %;_ -> []
@@ -62,7 +62,7 @@ get_new_orders() ->
 	case emysql:execute(mysqlpool,
             <<"select o.id, o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
             " o.number_ofservices, o.number_ofcontractors, o.status, ",
-            " o.street, o.apt, o.city, o.state, o.cell_phone, o.zip, u.name, u.login, u.phone "
+            " o.street, o.apt, o.city, o.state, o.cell_phone, o.zip, u.name, u.login, u.phone, ifnull(o.location,'') "
             " from orders o left join user u on u.id = o.uid where o.cid is null">>, []) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"order_id">>, <<"user_id">>, <<"contractor_id">>, <<"service_id">>, <<"cost">>, <<"gratuity">>,

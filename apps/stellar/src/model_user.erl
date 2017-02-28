@@ -11,6 +11,7 @@
     ,get_users/0
     ,create_order/8
     ,create_order/16
+    ,create_order/17
     ,update_order/16
 ]).
 
@@ -92,11 +93,13 @@ create_order(Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax) ->
 
 
 create_order(Uid, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost, Gratuity, Tax) ->
+    create_order(Uid, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost, Gratuity, Tax, <<>>).
+create_order(Uid, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost, Gratuity, Tax, Location) ->
     Ret = emysql:execute(mysqlpool, 
         <<"insert into orders (uid, sid, order_ontime, number_ofservices, number_ofcontractors, cost, gratuity, tax, ",
-                "phone, email, street, apt, city, state, cell_phone, zip ) ",
-           "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)">>, [Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax, 
-                                                        Phone, Email, Street, Apt, City, State, CPhone, Zip]),
+                "phone, email, street, apt, city, state, cell_phone, zip, location ) ",
+           "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)">>, [Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax, 
+                                                        Phone, Email, Street, Apt, City, State, CPhone, Zip, Location]),
     orders_queue:update_orders(),
     Ret.
 
