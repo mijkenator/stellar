@@ -219,7 +219,7 @@ send_email(To, Mail) when is_binary(To) -> send_email([To], Mail);
 send_email(To, Mail) ->
     {H, P, L, Pwd} = get_smtp_creds(),
     %gen_smtp_client:send({<<"admin@stellarmakeover.com">>, To, Mail},
-    gen_smtp_client:send({<<"mijkenator@gmail.com">>, To, Mail},
+    gen_smtp_client:send({<<"support@stellarmakeover.com">>, To, Mail},
         %[{relay, "127.0.0.1"}, {port, 25}]).
         [{relay, H}, {port, P}, {username, L}, {password, Pwd}]).
 
