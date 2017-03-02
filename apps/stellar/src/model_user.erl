@@ -88,8 +88,14 @@ get_details(Uid) ->
                 "ifnull(state,''), ifnull(phone,''), login, ref_id from user where id=?">>, [Uid]) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"name">>, <<"street">>, <<"apt">>, <<"zip">>, <<"city">>, <<"state">>, <<"phone">>, <<"email">>, <<"refcode">>],
-            [{lists:zip(F,P)}||P<-Ret]
+            [{lists:zip(F,P) ++ [{<<"ref_flag">>, get_ref_flag(Uid)}] }||P<-Ret]
         ;_ -> []
+	end.
+
+get_ref_flag(Uid) ->
+	case emysql:execute(mysqlpool, <<"select id from referrals where to_uid=?">>, [Uid]) of
+		{result_packet,_,_,[[Uid]],_} when is_integer(Uid), Uid>0 -> 1
+		;_ -> 0
 	end.
 
 set_details(Id, Name, Street, Apt, Zip, City, State, Phone) ->
