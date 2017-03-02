@@ -236,6 +236,23 @@ nonauth_action(<<"restore_password">> = A, JSON, Req, Opts, _Session) ->
             lager:error("CU WREFERR ~p ~p",[E,R]),
             nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
     end;
+nonauth_action(<<"check_refcode">> = A, JSON, Req, Opts, _Session) ->
+    try
+        lager:debug("UCCR: ~p", [JSON]),
+        Params = [ 
+                {"refcode",       [undefined, required, undefined ]}
+            ],
+        [Refcode] = nwapi_utils:get_json_params(JSON, Params),
+        case model_user:check_refcode(Refcode) of
+           {ok,_} -> ?OKRESP(A, [], Req, Opts);
+           {error, Error} -> ?ERRRESP(Error, A, Req, Opts)
+        end
+    catch
+        E:R ->
+            lager:error("CU WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
+
 nonauth_action(_Action, _, Req, Opts, _) ->
     {ok, ?NWR(reply, [<<"CUser NA UNKCOMMAND\nNOK">>, Req]), Opts}.
 

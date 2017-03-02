@@ -13,6 +13,7 @@
     ,create_order/16
     ,create_order/17
     ,update_order/16
+    ,check_refcode/1
 ]).
 
 signup(Login, Password) ->
@@ -50,6 +51,13 @@ rpwd_confirm(Guid, Pwd) ->
 		{result_packet,_,_,[[Uid]],_} when is_integer(Uid), Uid>0 -> 
 			emysql:execute(mysqlpool, <<"update user set password=? where id=?">>, [Pwd, Uid]),
 			emysql:execute(mysqlpool, <<"delete from user_pwdrestore where uid=?">>, [Uid]),
+			{ok, Uid}
+		;_ -> {error, <<"user not found">>}
+	end.
+
+check_refcode(Refcode) ->
+	case emysql:execute(mysqlpool, <<"select uid from user where ref_id=?">>, [Refcode]) of
+		{result_packet,_,_,[[Uid]],_} when is_integer(Uid), Uid>0 -> 
 			{ok, Uid}
 		;_ -> {error, <<"user not found">>}
 	end.
