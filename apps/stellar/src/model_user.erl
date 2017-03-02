@@ -19,6 +19,7 @@ signup(Login, Password) ->
 	GUid = list_to_binary(uuid:to_string(uuid:v4())),
 	case emysql:execute(mysqlpool, <<"insert into user (login,password,utype,confirm_uid) values (?,?,0,?)">>, [Login,Password,GUid]) of
 		{ok_packet,_,_,Uid,_,_,[]} -> 
+	    emysql:execute(mysqlpool, <<"update user set ref_id=CONCAT(?,'-',LPAD(floor(rand()*1000),3,'0') ) where id=?">>, [Uid,Uid]),
 		nwapi_utils:send_email(Login, 
             <<"Subject: signup confirmation\n\n Confirmation link: http://dev.stellarmakeover.com/after-sign-up/", GUid/binary>>),
 		{ok, Uid};
@@ -57,9 +58,9 @@ delete_user(Uid) -> emysql:execute(mysqlpool, <<"delete from user where id=?">>,
 
 get_details(Uid) ->
 	case emysql:execute(mysqlpool, <<"select ifnull(name,''), ifnull(street,''), ifnull(apt,''), ifnull(zip,''), ifnull(city,''), ",
-                "ifnull(state,''), ifnull(phone,''), login from user where id=?">>, [Uid]) of
+                "ifnull(state,''), ifnull(phone,''), login, ref_id from user where id=?">>, [Uid]) of
 		{result_packet,_,_,Ret,_} ->
-            F = [<<"name">>, <<"street">>, <<"apt">>, <<"zip">>, <<"city">>, <<"state">>, <<"phone">>, <<"email">>],
+            F = [<<"name">>, <<"street">>, <<"apt">>, <<"zip">>, <<"city">>, <<"state">>, <<"phone">>, <<"email">>, <<"refcode">>],
             [{lists:zip(F,P)}||P<-Ret]
         ;_ -> []
 	end.

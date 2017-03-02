@@ -46,6 +46,32 @@ action(<<"get_users">> = A, _JSON, Req, Opts, {auth, SData, _SID}) ->
 action(_Action, _, Req, Opts, _) ->
     {ok, ?NWR(reply, [<<"CUserA UNKCOMMAND\nNOK">>, Req]), Opts}.
 
+nonauth_action(<<"send_support_message">> = A, JSON, Req, Opts, _) ->
+    try
+        
+        Params = [ 
+            {"fname",           [<<>>, notrequired, undefined ]},
+            {"lname",           [<<>>, notrequired, undefined ]},
+            {"email",           [<<>>, notrequired, undefined ]},
+            {"message",         [<<>>, notrequired, undefined ]},
+            {"as",              [<<"customer">>, notrequired, undefined ]},
+            {"phone",           [<<>>, notrequired, undefined ]}
+        ],
+        lager:debug("~p SSM1", [A]),
+        [FName, LName, Email, Msg, As, Phone] = nwapi_utils:get_json_params(JSON, Params),
+        lager:debug("SSM2: ~p", [{FName, LName, Email, Msg, As, Phone}]),
+        Mail = <<"Subject: message from", As/binary, "\n\n", "From:", FName/binary, " ", LName/binary, 
+            " email:", Email/binary, "phone:", Phone/binary, " \n",
+            "Message:", Msg/binary>>,
+	    Ersp = nwapi_utils:send_email(<<"support@stellarmakeover.com">>, Mail), 
+        Ret = [],
+        lager:debug("SSM3: ~p", [Ersp]),
+        ?OKRESP(A, Ret, Req, Opts)
+    catch
+        E:R ->
+            lager:error("ACCSSM ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
 nonauth_action(_Action, _, Req, Opts, _) ->
     {ok, ?NWR(reply, [<<"CUser NA UNKCOMMAND\nNOK">>, Req]), Opts}.
 
