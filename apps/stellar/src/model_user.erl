@@ -16,16 +16,35 @@
     ,check_refcode/1
 ]).
 
-signup(Login, Password) ->
+signup(Login, Password) -> signup(Login, Password, <<>>).
+signup(Login, Password, Refcode) ->
 	GUid = list_to_binary(uuid:to_string(uuid:v4())),
 	case emysql:execute(mysqlpool, <<"insert into user (login,password,utype,confirm_uid) values (?,?,0,?)">>, [Login,Password,GUid]) of
 		{ok_packet,_,_,Uid,_,_,[]} -> 
 	    emysql:execute(mysqlpool, <<"update user set ref_id=CONCAT(?,'-',LPAD(floor(rand()*1000),3,'0') ) where id=?">>, [Uid,Uid]),
+        signup_with_refcode(Uid, Refcode),
 		nwapi_utils:send_email(Login, 
             <<"Subject: signup confirmation\n\n Confirmation link: http://dev.stellarmakeover.com/after-sign-up/", GUid/binary>>),
 		{ok, Uid};
 		{error_packet,1,1062,<<"23000">>,_} -> {error, <<"already exists">>}
 	end.
+
+signup_with_refcode(_, <<>>) -> ok;
+signup_with_refcode(Uid, Refcode) ->
+    case check_refcode(Refcode) of
+        {ok, RUid} when RUid =/= Uid -> insert_or_update_referrals(Uid, RUid)
+        ;_ -> ok
+    end.
+
+insert_or_update_referrals(Uid, RUid) ->
+    [{D}] = get_details(Uid),
+    Email = proplists:get_value(<<"email">>, D, <<>>),
+	case emysql:execute(mysqlpool, <<"select id from referrals where to_email=?">>, [Email]) of
+		{result_packet,_,_,[[Id]],_} when is_integer(Id), Id>0 ->
+              emysql:execute(mysqlpool, <<"update referrals set to_uid=? where id=?">>, [Uid, Id])
+        ;_ -> emysql:execute(mysqlpool, <<"insert into referrals (from_uid, to_email, dtime_sent, to_uid, is_sent) ",
+                "values (?,?,now(),?,0)">>, [RUid, Email, Uid]) 
+    end.
 
 login_restore(Login) ->
 	GUid = list_to_binary(uuid:to_string(uuid:v4())),

@@ -208,10 +208,11 @@ nonauth_action(<<"signup">> = A, JSON, Req, Opts, _Session) ->
         lager:debug("UCSIGNUP: ~p", [JSON]),
 	Params = [ 
             {"login",       [undefined, required, undefined ]},
-            {"password",    [undefined, required, undefined ]}
+            {"password",       [undefined, required, undefined ]},
+            {"refcode",    [<<>>, required, undefined ]}
         ],
-        [Login, Pwd] = nwapi_utils:get_json_params(JSON, Params),
-	case model_user:signup(Login, Pwd) of
+        [Login, Pwd, Refcode] = nwapi_utils:get_json_params(JSON, Params),
+	case model_user:signup(Login, Pwd, Refcode) of
 	   {ok,Uid} -> ?OKRESP(A, [Uid], Req, Opts);
 	   {error, Error} -> ?ERRRESP(Error, A, Req, Opts)
 	end
