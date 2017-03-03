@@ -14,6 +14,7 @@
     ,create_order/17
     ,update_order/16
     ,check_refcode/1
+    ,send_invite/2
 ]).
 
 signup(Login, Password) -> signup(Login, Password, <<>>).
@@ -151,4 +152,13 @@ update_order(OrderId, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City
     Ret = emysql:execute(mysqlpool, SQL, Params),
     orders_queue:update_orders(),
     Ret.
+
+send_invite(Email, Uid) ->
+    [{D}] = get_details(Uid),
+    Refcode = proplists:get_value(<<"refcode">>,D,<<>>),
+
+    emysql:execute(mysqlpool, <<"insert into referrals (from_uid, to_email, dtime_sent, is_sent) ",
+                                "values (?,?,now(),1)">>, [Uid, Email]),
+    nwapi_utils:send_email(Email, 
+        <<"Subject: invite!\n\n Signup at http://dev.stellarmakeover.com with referral code:", Refcode/binary>>).
 

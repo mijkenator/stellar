@@ -134,6 +134,21 @@ action(<<"create_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
             lager:error("CUCOERR: ~p ~p",[E,R]),
             nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
     end;
+action(<<"invite">> = A, JSON, Req, Opts,  {auth, SData, _SID}) ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        lager:debug("UCCR: ~p", [JSON]),
+        Params = [ 
+                {"to_email",       [undefined, required, undefined ]}
+            ],
+        [Email] = nwapi_utils:get_json_params(JSON, Params),
+        model_user:send_invite(Email, AccountId),
+        ?OKRESP(A, [], Req, Opts)
+    catch
+        E:R ->
+            lager:error("CU WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
 action(<<"update_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
     try
         AccountId = proplists:get_value(<<"account_id">>, SData),
