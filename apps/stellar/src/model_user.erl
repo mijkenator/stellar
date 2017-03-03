@@ -15,6 +15,7 @@
     ,update_order/16
     ,check_refcode/1
     ,send_invite/2
+    ,ref_activity/1
 ]).
 
 signup(Login, Password) -> signup(Login, Password, <<>>).
@@ -40,6 +41,8 @@ signup_with_refcode(Uid, Refcode) ->
 insert_or_update_referrals(Uid, RUid) ->
     [{D}] = get_details(Uid),
     Email = proplists:get_value(<<"email">>, D, <<>>),
+    emysql:execute(mysqlpool, <<"update user set bonus = bonus + 2000 where id=?">>, [Uid]),
+    emysql:execute(mysqlpool, <<"update user set bonus = bonus + 2000 where id=?">>, [RUid]),
 	case emysql:execute(mysqlpool, <<"select id from referrals where to_email=?">>, [Email]) of
 		{result_packet,_,_,[[Id]],_} when is_integer(Id), Id>0 ->
               emysql:execute(mysqlpool, <<"update referrals set to_uid=? where id=?">>, [Uid, Id])
@@ -86,9 +89,10 @@ delete_user(Uid) -> emysql:execute(mysqlpool, <<"delete from user where id=?">>,
 
 get_details(Uid) ->
 	case emysql:execute(mysqlpool, <<"select ifnull(name,''), ifnull(street,''), ifnull(apt,''), ifnull(zip,''), ifnull(city,''), ",
-                "ifnull(state,''), ifnull(phone,''), login, ref_id from user where id=?">>, [Uid]) of
+                "ifnull(state,''), ifnull(phone,''), login, ref_id, bonus from user where id=?">>, [Uid]) of
 		{result_packet,_,_,Ret,_} ->
-            F = [<<"name">>, <<"street">>, <<"apt">>, <<"zip">>, <<"city">>, <<"state">>, <<"phone">>, <<"email">>, <<"refcode">>],
+            F = [<<"name">>, <<"street">>, <<"apt">>, <<"zip">>, <<"city">>, 
+                 <<"state">>, <<"phone">>, <<"email">>, <<"refcode">>, <<"bonus_cents">>],
             [{lists:zip(F,P) ++ [{<<"ref_flag">>, get_ref_flag(Uid)}] }||P<-Ret]
         ;_ -> []
 	end.
@@ -115,6 +119,15 @@ get_users() ->
                 "ifnull(state,''), ifnull(phone,''), login from user where utype in (0,1) ">>, []) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"name">>, <<"street">>, <<"apt">>, <<"zip">>, <<"city">>, <<"state">>, <<"phone">>, <<"email">>],
+            [{lists:zip(F,P)}||P<-Ret]
+        ;_ -> []
+	end.
+
+ref_activity(Uid) ->
+	case emysql:execute(mysqlpool, <<"select to_email, cast(dtime_sent as chasr), ifnull(to_uid, 0), ",
+                                     "is_sent from referrals where from_uid=? ">>, [Uid]) of
+		{result_packet,_,_,Ret,_} ->
+            F = [<<"to_email">>,<<"date">>,<<"to_uid">>,<<"is_sent">>],
             [{lists:zip(F,P)}||P<-Ret]
         ;_ -> []
 	end.

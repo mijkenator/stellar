@@ -19,7 +19,8 @@ init(Req, Opts) -> utils_controller:controller_init(user_controller, Req, Opts).
 -spec is_auth_method(binary()) -> boolean().
 is_auth_method(Action) when is_binary(Action) ->
 	lists:member(Action, [<<"delete">>, <<"get_details">>, <<"set_details">>, 
-                          <<"create_order">>, <<"get_orders">>, <<"update_orders">>, <<"cancel_order">>]).
+                          <<"create_order">>, <<"get_orders">>, <<"update_orders">>, 
+                          <<"cancel_order">>, <<"referral_activity">>]).
 
 
 get_action(_, Req, Opts, _) ->
@@ -139,11 +140,22 @@ action(<<"invite">> = A, JSON, Req, Opts,  {auth, SData, _SID}) ->
         AccountId = proplists:get_value(<<"account_id">>, SData),
         lager:debug("UCCR: ~p", [JSON]),
         Params = [ 
-                {"to_email",       [undefined, required, undefined ]}
+                {"to_email",       [[], required, undefined ]}
             ],
-        [Email] = nwapi_utils:get_json_params(JSON, Params),
-        model_user:send_invite(Email, AccountId),
+        [Emails] = nwapi_utils:get_json_params(JSON, Params),
+        lists:foreach(fun({E})-> model_user:send_invite(proplists:get_value(<<"email">>,E), AccountId) end,Emails),
         ?OKRESP(A, [], Req, Opts)
+    catch
+        E:R ->
+            lager:error("CU WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
+action(<<"referral_activity">> = A, _JSON, Req, Opts,  {auth, SData, _SID}) ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        lager:debug("UCRA: ~p", [AccountId]),
+        Ret = model_user:ref_activity(AccountId),
+        ?OKRESP(A, Ret, Req, Opts)
     catch
         E:R ->
             lager:error("CU WREFERR ~p ~p",[E,R]),
