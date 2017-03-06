@@ -20,7 +20,7 @@ init(Req, Opts) -> utils_controller:controller_init(user_controller, Req, Opts).
 is_auth_method(Action) when is_binary(Action) ->
 	lists:member(Action, [<<"delete">>, <<"get_details">>, <<"set_details">>, 
                           <<"create_order">>, <<"get_orders">>, <<"update_orders">>, 
-                          <<"cancel_order">>, <<"referral_activity">>]).
+                          <<"cancel_order">>, <<"referral_activity">>, <<"invite">>]).
 
 
 get_action(_, Req, Opts, _) ->
@@ -245,7 +245,7 @@ nonauth_action(<<"signup">> = A, JSON, Req, Opts, _Session) ->
 	end
     catch
         E:R ->
-            lager:error("CU WREFERR ~p ~p",[E,R]),
+            lager:error("CU SIGNERR ~p ~p",[E,R]),
             nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
     end;
 nonauth_action(<<"restore_password">> = A, JSON, Req, Opts, _Session) ->

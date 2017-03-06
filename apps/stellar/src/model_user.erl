@@ -2,6 +2,7 @@
 
 -export([
 	signup/2
+	,signup/3
 	,login_restore/1
 	,signup_confirm/1
 	,rpwd_confirm/2
@@ -20,11 +21,15 @@
 
 signup(Login, Password) -> signup(Login, Password, <<>>).
 signup(Login, Password, Refcode) ->
+    lager:debug("MUS1 ~p", [{Login, Password, Refcode}]),
 	GUid = list_to_binary(uuid:to_string(uuid:v4())),
 	case emysql:execute(mysqlpool, <<"insert into user (login,password,utype,confirm_uid) values (?,?,0,?)">>, [Login,Password,GUid]) of
 		{ok_packet,_,_,Uid,_,_,[]} -> 
+        lager:debug("MUS2 ~p", [{Uid, GUid}]),
 	    emysql:execute(mysqlpool, <<"update user set ref_id=CONCAT(?,'-',LPAD(floor(rand()*1000),3,'0') ) where id=?">>, [Uid,Uid]),
+        lager:debug("MUS3 ", []),
         signup_with_refcode(Uid, Refcode),
+        lager:debug("MUS4 ", []),
 		nwapi_utils:send_email(Login, 
             <<"Subject: signup confirmation\n\n Confirmation link: http://dev.stellarmakeover.com/after-sign-up/", GUid/binary>>),
 		{ok, Uid};
@@ -33,12 +38,14 @@ signup(Login, Password, Refcode) ->
 
 signup_with_refcode(_, <<>>) -> ok;
 signup_with_refcode(Uid, Refcode) ->
+    lager:debug("MUS3.1 ", []),
     case check_refcode(Refcode) of
         {ok, RUid} when RUid =/= Uid -> insert_or_update_referrals(Uid, RUid)
         ;_ -> ok
     end.
 
 insert_or_update_referrals(Uid, RUid) ->
+    lager:debug("MUS3.2 ", []),
     [{D}] = get_details(Uid),
     Email = proplists:get_value(<<"email">>, D, <<>>),
     emysql:execute(mysqlpool, <<"update user set bonus = bonus + 2000 where id=?">>, [Uid]),
@@ -79,7 +86,7 @@ rpwd_confirm(Guid, Pwd) ->
 	end.
 
 check_refcode(Refcode) ->
-	case emysql:execute(mysqlpool, <<"select uid from user where ref_id=?">>, [Refcode]) of
+	case emysql:execute(mysqlpool, <<"select id from user where ref_id=?">>, [Refcode]) of
 		{result_packet,_,_,[[Uid]],_} when is_integer(Uid), Uid>0 -> 
 			{ok, Uid}
 		;_ -> {error, <<"user not found">>}
@@ -124,7 +131,7 @@ get_users() ->
 	end.
 
 ref_activity(Uid) ->
-	case emysql:execute(mysqlpool, <<"select to_email, cast(dtime_sent as chasr), ifnull(to_uid, 0), ",
+	case emysql:execute(mysqlpool, <<"select to_email, cast(dtime_sent as char), ifnull(to_uid, 0), ",
                                      "is_sent from referrals where from_uid=? ">>, [Uid]) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"to_email">>,<<"date">>,<<"to_uid">>,<<"is_sent">>],
