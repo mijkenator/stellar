@@ -131,13 +131,51 @@ get_users() ->
 	end.
 
 ref_activity(Uid) ->
-	case emysql:execute(mysqlpool, <<"select to_email, cast(dtime_sent as char), ifnull(to_uid, 0), ",
+	case emysql:execute(mysqlpool, <<"select id, to_email, cast(dtime_sent as char), ifnull(to_uid, 0), ",
                                      "is_sent from referrals where from_uid=? ">>, [Uid]) of
 		{result_packet,_,_,Ret,_} ->
-            F = [<<"to_email">>,<<"date">>,<<"to_uid">>,<<"is_sent">>],
-            [{lists:zip(F,P)}||P<-Ret]
+            lager:debug("RefActivity: ~p", [Ret]),
+            F = [<<"id">>,<<"to_email">>,<<"date">>,<<"to_uid">>,<<"is_sent">>],
+            %[{lists:zip(F,P)}||P<-Ret]
+            lists:map(fun(P)-> 
+                lager:debug("_i_RefActivity: ~p", [P]),
+                {RefInfo, {StatusMessage, StatusCode}} = get_refuid_info(lists:nth(4, P), lists:nth(5, P)),
+                {lists:zip(F,P) ++ [{<<"ref_info">>, RefInfo},{<<"status_code">>, StatusCode},{<<"status_message">>, StatusMessage}]}
+
+            end, Ret)
+
         ;_ -> []
 	end.
+
+get_refuser_membership(_Uid) -> {0, <<>>}.
+get_refuser_data(Uid) ->
+	case emysql:execute(mysqlpool, <<"select cast(time_created as char) from user where id=?">>, [Uid]) of
+		{result_packet,_,_,[Ret],_} -> Ret
+        ;_ -> []
+	end.
+
+get_refuid_info(ToUid, IsSent) when is_integer(ToUid), ToUid>0->
+    lager:debug("GRI1 ~p", [{ToUid, IsSent}]),
+    RUData = get_refuser_data(ToUid),
+    lager:debug("GRI2 ~p", [RUData]),
+    {UMSt, UMSD} = get_refuser_membership(ToUid),
+    lager:debug("GRI3 ~p", [{UMSt, UMSD}]),
+    {Status, Bonus, Mpd} = case {IsSent, UMSt} of
+        {0,0} -> {{<<"Somebody used your Referral Code to open an account. Membership is not paid.">>, 4},<<"NO">>,<<>>}; 
+        {1,0} ->{{<<"Referral is sent. Account is created. Membership is not paid.">>,2},<<"NO">>,<<>>};
+
+        {0,1} ->{{<<"Somebody used your Referral Code to open an account. Membership is paid.">>,5},<<"YES">>,UMSD};
+        {1,1} ->{{<<"Referral is sent. Account is created. Membership is paid.">>, 6},<<"YES">>,UMSD}
+    end,
+    {[
+        {<<"account_created">>, lists:nth(1, RUData)},
+        {<<"membership_purchase_date">>, Mpd},
+        {<<"bonus_issued">>, Bonus}
+    ], Status};
+get_refuid_info(undefined, _) -> {[], {<<"Referral is sent. Account not created yet.">>,1}};
+get_refuid_info(A,B) ->
+    lager:debug("GRI undk: ~p", [{A,B}]), {[], {<<"Referral is sent. Account not created yet.">>,1}}.
+
 
 create_order(Uid, Sid, DTime, ServNum, CNum, Cost, Gratuity, Tax) ->
     Ret = emysql:execute(mysqlpool, 

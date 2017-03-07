@@ -54,6 +54,6 @@ print(r.text)
 #payload = {'request' : '{"type":"invite","to_email":[{"email":"stellartest0@mailinator.com","name":"Stellar Test 1"}]}'}
 #r = s.post(url, data=payload)
 #print(r.text)
-payload = {'request' : '{"type":"signup","login":"stellartest100@mailinator.com","password":"123","refcode":"70-924"}'}
-r = s.post(url, data=payload)
-print(r.text)
+#payload = {'request' : '{"type":"signup","login":"stellartest100@mailinator.com","password":"123","refcode":"70-924"}'}
+#r = s.post(url, data=payload)
+#print(r.text)
