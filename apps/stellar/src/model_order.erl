@@ -59,6 +59,7 @@ acs_info(OrderInfo) ->
 
 
 get_new_orders() ->
+    io:format("GNO 1 ~n", []),
 	case emysql:execute(mysqlpool,
             <<"select o.id, o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
             " o.number_ofservices, o.number_ofcontractors, o.status, ",
@@ -68,9 +69,14 @@ get_new_orders() ->
             F = [<<"order_id">>, <<"user_id">>, <<"contractor_id">>, <<"service_id">>, <<"cost">>, <<"gratuity">>,
             <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>,
             <<"street">>, <<"apt">>, <<"city">>, <<"state">>, <<"cell_phone">>, <<"zip">>, <<"name">>, 
-            <<"email">>, <<"phone">>],
+            <<"email">>, <<"phone">>, <<"location">>],
+            %lager:debug("MOGNO ~p", [Ret]),
+            %io:format("GNO 2 ~p ~n", [Ret]),
             [{lists:zip(F,P) ++ acs_info(P)} ||P<-Ret]
-        ;_ -> []
+        ;_E ->
+            %lager:error("MOGNO ~p", [_E]),
+            %io:format("GNO 3 ~p ~n", [_E]),
+            []
 	end.
 
 get_order(Oid) ->

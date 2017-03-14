@@ -140,7 +140,7 @@ ref_activity(Uid) ->
             lists:map(fun(P)-> 
                 lager:debug("_i_RefActivity: ~p", [P]),
                 {RefInfo, {StatusMessage, StatusCode}} = get_refuid_info(lists:nth(4, P), lists:nth(5, P)),
-                {lists:zip(F,P) ++ [{<<"ref_info">>, RefInfo},{<<"status_code">>, StatusCode},{<<"status_message">>, StatusMessage}]}
+                {lists:zip(F,P) ++ [{<<"ref_info">>, {RefInfo}},{<<"status_code">>, StatusCode},{<<"status_message">>, StatusMessage}]}
 
             end, Ret)
 
@@ -161,11 +161,11 @@ get_refuid_info(ToUid, IsSent) when is_integer(ToUid), ToUid>0->
     {UMSt, UMSD} = get_refuser_membership(ToUid),
     lager:debug("GRI3 ~p", [{UMSt, UMSD}]),
     {Status, Bonus, Mpd} = case {IsSent, UMSt} of
-        {0,0} -> {{<<"Somebody used your Referral Code to open an account. Membership is not paid.">>, 4},<<"NO">>,<<>>}; 
-        {1,0} ->{{<<"Referral is sent. Account is created. Membership is not paid.">>,2},<<"NO">>,<<>>};
+        {0,0} -> {{<<"Somebody used your Referral Code to open an account. Services are not booked yet.">>, 4},<<"NO">>,<<>>}; 
+        {1,0} ->{{<<"Referral is sent. Account is created. Services are not booked yet.">>,2},<<"NO">>,<<>>};
 
-        {0,1} ->{{<<"Somebody used your Referral Code to open an account. Membership is paid.">>,5},<<"YES">>,UMSD};
-        {1,1} ->{{<<"Referral is sent. Account is created. Membership is paid.">>, 6},<<"YES">>,UMSD}
+        {0,1} ->{{<<"Somebody used your Referral Code to open an account. Services are booked.">>,5},<<"YES">>,UMSD};
+        {1,1} ->{{<<"Referral is sent. Account is created. Services are booked.">>, 6},<<"YES">>,UMSD}
     end,
     {[
         {<<"account_created">>, lists:nth(1, RUData)},

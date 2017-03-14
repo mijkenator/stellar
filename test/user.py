@@ -6,9 +6,9 @@ s = requests.Session()
 #url = "http://127.0.0.1:8080"
 url = "http://52.76.131.184/_mijkweb/user"
 
-payload = {'request' : '{"type":"signup", "login":"mijkenator@gmail.com", "password":"test"}'}
-r = s.post(url, data=payload)
-print(r.text)
+#payload = {'request' : '{"type":"signup", "login":"mijkenator@gmail.com", "password":"test"}'}
+#r = s.post(url, data=payload)
+#print(r.text)
 
 #exit(0)
 
@@ -24,15 +24,15 @@ print(r.text)
 
 #payload = {'request' : '{"type":"restore-pwd-confirm", "guid":"111111", "password":"test123"}'}
 #payload = {'request' : '{"type":"delete", "login":"mijkenator@gmail.com", "password":"test123"}'}
-payload = {'request' : '{"type":"get_details", "login":"mijkenator@gmail.com", "password":"test"}'}
-r = s.post(url, data=payload)
-print(r.text)
+#payload = {'request' : '{"type":"get_details", "login":"mijkenator@gmail.com", "password":"test"}'}
+#r = s.post(url, data=payload)
+#print(r.text)
 
-payload = {'request' : '{"type":"set_details", "name":"1", "street":"2", "apt":"3", "zip":"4", "city":"5", "state":"6", "phone":"7"}'}
-r = s.post(url, data=payload)
-print(r.text)
+#payload = {'request' : '{"type":"set_details", "name":"1", "street":"2", "apt":"3", "zip":"4", "city":"5", "state":"6", "phone":"7"}'}
+#r = s.post(url, data=payload)
+#print(r.text)
 
-payload = {'request' : '{"type":"get_details", "login":"mijkenator@gmail.com", "password":"test"}'}
+payload = {'request' : '{"type":"get_details", "login":"freejob@inbox.ru", "password":"1815133"}'}
 r = s.post(url, data=payload)
 print(r.text)
 
@@ -42,9 +42,9 @@ print(r.text)
 #r = s.post(url, data=payload)
 #print(r.text)
 
-payload = {'request' : '{"type":"get_orders"}'}
-r = s.post(url, data=payload)
-print(r.text)
+#payload = {'request' : '{"type":"get_orders"}'}
+#r = s.post(url, data=payload)
+#print(r.text)
 
 payload = {'request' : '{"type":"referral_activity"}'}
 r = s.post(url, data=payload)
@@ -54,6 +54,7 @@ print(r.text)
 #payload = {'request' : '{"type":"invite","to_email":[{"email":"stellartest0@mailinator.com","name":"Stellar Test 1"}]}'}
 #r = s.post(url, data=payload)
 #print(r.text)
-#payload = {'request' : '{"type":"signup","login":"stellartest100@mailinator.com","password":"123","refcode":"70-924"}'}
-#r = s.post(url, data=payload)
-#print(r.text)
+payload = {'request' : '{"type":"signup","login":"mkh100@mailinator.com","password":"123","refcode":"70-924"}'}
+r = s.post(url, data=payload)
+print(r.text)
+
