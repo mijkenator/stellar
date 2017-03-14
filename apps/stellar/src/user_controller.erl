@@ -250,15 +250,26 @@ nonauth_action(<<"signup">> = A, JSON, Req, Opts, _Session) ->
     end;
 nonauth_action(<<"restore_password">> = A, JSON, Req, Opts, _Session) ->
     try
-        lager:debug("UCSIGNUP: ~p", [JSON]),
-	Params = [ 
-            {"login",       [undefined, required, undefined ]}
-        ],
+        lager:debug("UCRestP1: ~p", [JSON]),
+        Params = [ 
+                {"login",       [undefined, required, undefined ]}
+            ],
         [Login] = nwapi_utils:get_json_params(JSON, Params),
-	case model_user:login_restore(Login) of
-	   {ok,_} -> ?OKRESP(A, [], Req, Opts);
-	   {error, Error} -> ?ERRRESP(Error, A, Req, Opts)
-	end
+        Headers = cowboy_req:headers(Req),
+        RpT = case maps:get(<<"origin">>, Headers, <<"">>) of
+            Or when Or == <<"http://stellarmakeover.com">>;
+                    Or == <<"https://stellarmakeover.com">>;
+                    Or == <<"https://wwww.stellarmakeover.com">>;
+                    Or == <<"http://wwww.stellarmakeover.com">> -> <<"user">>;
+            Or1 ->
+                lager:debug("Nonuser origin ~p", [Or1]),
+                <<"pro">>
+        end,
+        lager:debug("UCRestP2: ~p ~p", [RpT, Headers]),
+        case model_user:login_restore(Login, RpT) of
+           {ok,_} -> ?OKRESP(A, [], Req, Opts);
+           {error, Error} -> ?ERRRESP(Error, A, Req, Opts)
+        end
     catch
         E:R ->
             lager:error("CU WREFERR ~p ~p",[E,R]),

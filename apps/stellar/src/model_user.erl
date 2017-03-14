@@ -4,6 +4,7 @@
 	signup/2
 	,signup/3
 	,login_restore/1
+	,login_restore/2
 	,signup_confirm/1
 	,rpwd_confirm/2
 	,delete_user/1
@@ -57,14 +58,20 @@ insert_or_update_referrals(Uid, RUid) ->
                 "values (?,?,now(),?,0)">>, [RUid, Email, Uid]) 
     end.
 
-login_restore(Login) ->
+login_restore(Login) -> login_restore(Login, <<"user">>).
+login_restore(Login, RpT) ->
 	GUid = list_to_binary(uuid:to_string(uuid:v4())),
 	case emysql:execute(mysqlpool, <<"select id from user where login=?">>, [Login]) of
 		{result_packet,_,_,[[Uid]],_} when is_integer(Uid), Uid>0 -> 
 			emysql:execute(mysqlpool, <<"delete from user_pwdrestore where uid=?">>, [Uid]),
 			emysql:execute(mysqlpool, <<"insert into user_pwdrestore (uid, guid) values (?,?)">>, [Uid, GUid]),
+            SbD = case RpT of
+                <<"pro">> -> <<"pro.">>;
+                _ -> <<"">>
+            end,
 			nwapi_utils:send_email(Login, 
-                <<"Subject: password restore\n\n Restore link: http://stellarmakeover.com/restore-password/", GUid/binary>>), {ok, Uid}
+                <<"Subject: password restore\n\n Restore link: http://",SbD/binary,
+                                "stellarmakeover.com/restore-password/", GUid/binary>>), {ok, Uid}
 		;_ -> {error, <<"user not found">>}
 	end.
 
