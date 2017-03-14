@@ -31,7 +31,7 @@ signup(Login, Password, Refcode) ->
         signup_with_refcode(Uid, Refcode),
         lager:debug("MUS4 ", []),
 		nwapi_utils:send_email(Login, 
-            <<"Subject: signup confirmation\n\n Confirmation link: http://dev.stellarmakeover.com/after-sign-up/", GUid/binary>>),
+            <<"Subject: signup confirmation\n\n Confirmation link: http://stellarmakeover.com/after-sign-up/", GUid/binary>>),
 		{ok, Uid};
 		{error_packet,1,1062,<<"23000">>,_} -> {error, <<"already exists">>}
 	end.
@@ -64,7 +64,7 @@ login_restore(Login) ->
 			emysql:execute(mysqlpool, <<"delete from user_pwdrestore where uid=?">>, [Uid]),
 			emysql:execute(mysqlpool, <<"insert into user_pwdrestore (uid, guid) values (?,?)">>, [Uid, GUid]),
 			nwapi_utils:send_email(Login, 
-                <<"Subject: password restore\n\n Restore link: http://dev.stellarmakeover.com/restore-password/", GUid/binary>>), {ok, Uid}
+                <<"Subject: password restore\n\n Restore link: http://stellarmakeover.com/restore-password/", GUid/binary>>), {ok, Uid}
 		;_ -> {error, <<"user not found">>}
 	end.
 
@@ -218,5 +218,6 @@ send_invite(Email, Uid) ->
     emysql:execute(mysqlpool, <<"insert into referrals (from_uid, to_email, dtime_sent, is_sent) ",
                                 "values (?,?,now(),1)">>, [Uid, Email]),
     nwapi_utils:send_email(Email, 
-        <<"Subject: invite!\n\n Signup at http://dev.stellarmakeover.com with referral code:", Refcode/binary>>).
+        <<"Subject: invite!\n\n Signup at http://stellarmakeover.com/sign-up?refcode=",Refcode/binary,
+        "&email=",Email/binary," with referral code:", Refcode/binary>>).
 
