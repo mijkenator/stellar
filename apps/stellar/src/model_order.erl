@@ -7,6 +7,7 @@
     ,get_new_orders/0
     ,get_order/1
     ,complete_order/2
+    ,make_stripe_payment/5
 ]).
 
 admin_get_orders(Uid, Cid) ->
@@ -20,7 +21,7 @@ admin_get_orders(Uid, Cid) ->
             <<"select o.id, o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
             " o.number_ofservices, o.number_ofcontractors, o.status, ",
             " o.street, o.apt, o.city, o.state, o.cell_phone, o.zip, cast(o.order_done as char), s.title, c.name,  ",
-            " u.name, u.login, ifnull(o.location,'') ",
+            " u.name, u.login, ifnull(o.location,''), ifnull(o.payment_status, 0), ifnull(stripe_id, '') ",
             " from orders o left join services s on s.id = o.sid left join service_category c on c.id = s.cat_id ",
             " left join user u on u.id = o.uid ",
             ExtraSQL/binary>>, Params) of
@@ -28,7 +29,7 @@ admin_get_orders(Uid, Cid) ->
             F = [<<"order_id">>, <<"user_id">>, <<"contractor_id">>, <<"service_id">>, <<"cost">>, <<"gratuity">>,
             <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>,
             <<"street">>, <<"apt">>, <<"city">>, <<"state">>, <<"cell_phone">>, <<"zip">>, <<"finish_time">>, 
-            <<"service_name">>, <<"category_name">>, <<"user_name">>, <<"user_email">>, <<"location">>],
+            <<"service_name">>, <<"category_name">>, <<"user_name">>, <<"user_email">>, <<"location">>, <<"payment_status">>, <<"stripe_id">>],
             
             [{lists:zip(F,P) ++ acs_info(P) }||P<-Ret]
         %;_ -> []
@@ -122,3 +123,28 @@ complete_order(Uid, Oid) ->
     emysql:execute(mysqlpool,<<"update orders set status = 'past', order_done=NOW() where cid=? and id=?">>,[Uid, Oid]),
     orders_queue:update_orders().
 
+make_stripe_payment(AccountId, AmountCnts, _Currency, Token, Orderid) ->
+    try
+        [{Order}] = get_order(Orderid),
+        OCost = proplists:get_value(<<"cost">>, Order),
+        OCost == AmountCnts orelse throw(price_mismatch),
+        Pcmd = io_lib:format("python3 /opt/stellare/stripe/charge.py -a ~p -s ~p -u ~p -o ~p", 
+            [AmountCnts, binary_to_list(Token), AccountId, Orderid]),
+        case os:cmd(Pcmd) of
+            "Error\n" ->
+                lager:error("stripe paiment failed ~p", [{AccountId, Orderid, Token}]),
+                {error, <<"failed">>};
+            Pid       ->
+                lager:log("Stripe payment ok ~p", [Pid]),
+                Pid1 = re:replace(Pid,"\\s+","",[global, {return, list}]),
+                lager:log("Stripe payment ok ~p", [Pid1]),
+                update_payed_order(Orderid, Pid1)
+        end
+    catch
+        throw:price_mismatch -> {error, <<"wrong price">>};
+        _:R                  -> {error, R}
+    end.
+
+update_payed_order(Orderid, Pid1) ->
+    emysql:execute(mysqlpool,<<"update orders set payment_status = 1, stripe_id=? where id=?">>,[Pid1, Orderid]).
+    

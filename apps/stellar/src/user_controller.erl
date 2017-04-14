@@ -135,6 +135,26 @@ action(<<"create_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
             lager:error("CUCOERR: ~p ~p",[E,R]),
             nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
     end;
+action(<<"make_stripe_payment">> = A, JSON, Req, Opts,  {auth, SData, _SID}) ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        lager:debug("UCCR: ~p", [JSON]),
+        Params = [ 
+                {"amount_cents",    [undefined, required, undefined ]},
+                {"currency",        [<<"usd">>, required, undefined ]},
+                {"token",           [undefined, required, undefined ]},
+                {"orderid",         [undefined, required, undefined ]}
+            ],
+        [AmountCnts, Currency, Token, Orderid] = nwapi_utils:get_json_params(JSON, Params),
+        case model_order:make_stripe_payment(AccountId, AmountCnts, Currency, Token, Orderid) of
+            true -> ?OKRESP(A, [], Req, Opts);
+	        {error, Error} -> ?ERRRESP(Error, A, Req, Opts)
+        end
+    catch
+        E:R ->
+            lager:error("CU WREFERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
 action(<<"invite">> = A, JSON, Req, Opts,  {auth, SData, _SID}) ->
     try
         AccountId = proplists:get_value(<<"account_id">>, SData),
