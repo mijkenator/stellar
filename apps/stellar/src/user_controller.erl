@@ -150,7 +150,7 @@ action(<<"make_stripe_payment">> = A, JSON, Req, Opts,  {auth, SData, _SID}) ->
                 {"orderid",         [undefined, required, undefined ]}
             ],
         [AmountCnts, Currency, Token, Orderid] = nwapi_utils:get_json_params(JSON, Params),
-        case model_order:make_stripe_payment(AccountId, AmountCnts, Currency, Token, Orderid) of
+        case model_order:save_stripe_payment(AccountId, AmountCnts, Currency, Token, Orderid) of
             true -> ?OKRESP(A, [], Req, Opts);
 	        {error, Error} -> ?ERRRESP(Error, A, Req, Opts)
         end

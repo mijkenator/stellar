@@ -8,6 +8,7 @@
     ,get_order/1
     ,complete_order/2
     ,make_stripe_payment/5
+    ,save_stripe_payment/5
 ]).
 
 admin_get_orders(Uid, Cid) ->
@@ -83,11 +84,11 @@ get_new_orders() ->
 get_order(Oid) ->
 	case emysql:execute(mysqlpool,
             <<"select o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
-            " o.number_ofservices, o.number_ofcontractors, o.status ",
+            " o.number_ofservices, o.number_ofcontractors, o.status, o.payment_token ",
             " from orders o where o.id = ?">>, [Oid]) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"user_id">>, <<"contractor_id">>, <<"service_id">>, <<"cost">>, <<"gratuity">>,
-            <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>],
+            <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>, <<"token">>],
             [{lists:zip(F,P)}||P<-Ret]
         ;_ -> []
 	end.
@@ -120,11 +121,28 @@ take_order(Cid, Oid) ->
     end.
 
 complete_order(Uid, Oid) ->
-    emysql:execute(mysqlpool,<<"update orders set status = 'past', order_done=NOW() where cid=? and id=?">>,[Uid, Oid]),
+    case make_stripe_payment(Oid) of
+        {error, Err} ->
+            lager:error("complete order error"),
+            emysql:execute(mysqlpool,<<"update orders set payment_status=2, payment_err =? where  id=?">>,[Err, Oid]);
+        _Pid        ->
+            emysql:execute(mysqlpool,<<"update orders set status = 'past', order_done=NOW()  where cid=? and id=?">>,[Uid, Oid])
+    end,
     orders_queue:update_orders().
 
+make_stripe_payment(Oid) ->
+    try
+        [{Order}] = get_order(Oid),
+        OCost = proplists:get_value(<<"cost">>, Order),
+        Token = proplists:get_value(<<"token">>, Order),
+        make_stripe_payment(0, OCost, <<"usd">>, Token, Oid) 
+    catch
+        throw:price_mismatch -> {error, <<"wrong price">>};
+        _:R                  -> {error, R}
+    end.
 make_stripe_payment(AccountId, AmountCnts, _Currency, Token, Orderid) ->
     try
+        lager:debug("MSP ~p ", [{AccountId, AmountCnts, _Currency, Token, Orderid}]),
         [{Order}] = get_order(Orderid),
         OCost = proplists:get_value(<<"cost">>, Order),
         OCost == AmountCnts orelse throw(price_mismatch),
@@ -138,12 +156,27 @@ make_stripe_payment(AccountId, AmountCnts, _Currency, Token, Orderid) ->
                 lager:log("Stripe payment ok ~p", [Pid]),
                 Pid1 = re:replace(Pid,"\\s+","",[global, {return, list}]),
                 lager:log("Stripe payment ok ~p", [Pid1]),
-                update_payed_order(Orderid, Pid1)
+                update_payed_order(Orderid, Pid1),
+                Pid1
         end
     catch
         throw:price_mismatch -> {error, <<"wrong price">>};
         _:R                  -> {error, R}
     end.
+
+save_stripe_payment(_AccountId, AmountCnts, _Currency, Token, Orderid) ->
+    try
+        [{Order}] = get_order(Orderid),
+        OCost = proplists:get_value(<<"cost">>, Order),
+        OCost == AmountCnts orelse throw(price_mismatch),
+        update_order_stripe_token(Orderid, Token)
+    catch
+        throw:price_mismatch -> {error, <<"wrong price">>};
+        _:R                  -> {error, R}
+    end.
+
+update_order_stripe_token(Orderid, Pid1) ->
+    emysql:execute(mysqlpool,<<"update orders set payment_status = 0, payment_id=? where id=?">>,[Pid1, Orderid]).
 
 update_payed_order(Orderid, Pid1) ->
     emysql:execute(mysqlpool,<<"update orders set payment_status = 1, stripe_id=? where id=?">>,[Pid1, Orderid]).
