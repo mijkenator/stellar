@@ -119,7 +119,7 @@ action(<<"create_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
             {"state",                   [<<>>, notrequired, undefined ]},
             {"cell_phone",              [<<>>, notrequired, undefined ]},
             {"zip",                     [<<>>, notrequired, undefined ]},
-            {"location",                     [<<>>, notrequired, undefined ]},
+            {"location",                [<<>>, notrequired, undefined ]},
             {"cost",                    [0,    required, undefined ]}
         ],
         lager:debug("~p Params1: ~p", [A, Params]),
@@ -129,7 +129,11 @@ action(<<"create_order">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
         Tax = 0,
         Ret = model_user:create_order(AccountId, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City, State, CPhone, Zip, Cost, Gratuity, Tax, Location),
         lager:debug("UCD RET: ~p", [Ret]),
-        ?OKRESP(A, [], Req, Opts)
+        case Ret of
+            {ok_packet,1,1,Oid,_,_,_} ->
+                  ?OKRESP(A, [{[ {<<"order_id">>, Oid}, {<<"amount_cents">>,Cost}  ]}], Req, Opts)
+            ;_ -> ?OKRESP(A, [], Req, Opts)
+        end
     catch
         E:R ->
             lager:error("CUCOERR: ~p ~p",[E,R]),
