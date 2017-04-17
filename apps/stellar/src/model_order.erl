@@ -8,6 +8,7 @@
     ,get_order/1
     ,complete_order/2
     ,make_stripe_payment/5
+    ,make_stripe_payment/1
     ,save_stripe_payment/5
 ]).
 
@@ -102,8 +103,12 @@ cancel_order(Uid, Oid) ->
       true ->
         case lists:member(Status, [<<"pending">>, <<"upcoming">>]) of
             true -> 
-                emysql:execute(mysqlpool,<<"update orders set status = 'cancelled' where uid=? and id=?">>,[Uid, Oid]),
-                orders_queue:update_orders()
+                case make_stripe_cancel_payment(Oid) of
+                    {error, Err} -> {error, Err}
+                    ;_ ->
+                        emysql:execute(mysqlpool,<<"update orders set status = 'cancelled' where uid=? and id=?">>,[Uid, Oid]),
+                        orders_queue:update_orders()
+                end
             ;_   -> {error, non_cancel_status}
         end
       ;_ -> {error, another_user_order} 
@@ -130,6 +135,22 @@ complete_order(Uid, Oid) ->
     end,
     orders_queue:update_orders().
 
+make_stripe_cancel_payment(Oid) ->
+    try
+        case update_order_for_cancel(Oid) of
+            ok -> 
+                [{Order}] = get_order(Oid),
+                OCost = proplists:get_value(<<"cost">>, Order),
+                Token = proplists:get_value(<<"token">>, Order),
+                make_stripe_payment(0, OCost, <<"usd">>, Token, Oid);
+            nok ->
+                lager:error("MSCP failed, no stripe payment", []),
+                {error, <<"no payment">>}
+        end
+    catch
+        throw:price_mismatch -> {error, <<"wrong price">>};
+        _:R                  -> {error, R}
+    end.
 make_stripe_payment(Oid) ->
     try
         [{Order}] = get_order(Oid),
@@ -174,6 +195,24 @@ save_stripe_payment(_AccountId, AmountCnts, _Currency, Token, Orderid) ->
         throw:price_mismatch -> {error, <<"wrong price">>};
         _:R                  -> {error, R}
     end.
+
+update_order_for_cancel(Oid) ->
+	case emysql:execute(mysqlpool,
+            <<"select o.cost, abs(timestampdiff(hour, now(), order_ontime)) ",
+            " from orders o where o.id = ?">>, [Oid]) of
+		{result_packet,_,_,[[Amnt, Hrs]],_} when Hrs < 24 -> 
+            lager:debug("UOFC < 24 ~p", [Amnt]),
+            ok;
+		{result_packet,_,_,[[Amnt, Hrs]],_} when Hrs < 48 -> 
+            NAmnt = Amnt div 5,
+            Ur = emysql:execute(mysqlpool, <<"update orders set cost=? where id=?">>, [NAmnt, Oid]),
+            lager:debug("UOFC < 48 ~p", [{Amnt, NAmnt, Ur}]),
+            ok;
+		{result_packet,_,_,[[Amnt, Hrs]],_} when Hrs > 48 ->
+            lager:debug("UOFC > 48 ~p", [Amnt]),
+            nok
+        ;_ -> nok
+	end.
 
 update_order_stripe_token(Orderid, Pid1) ->
     emysql:execute(mysqlpool,<<"update orders set payment_status = 0, payment_id=? where id=?">>,[Pid1, Orderid]).
