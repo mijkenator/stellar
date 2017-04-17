@@ -19,7 +19,7 @@ init(Req, Opts) -> utils_controller:controller_init(admin_user_controller, Req, 
 -spec is_auth_method(binary()) -> boolean().
 is_auth_method(Action) when is_binary(Action) ->
 	lists:member(Action, [
-        <<"get_users">>
+        <<"get_users">>, <<"delete_user">>
     ]).
 
 
@@ -36,6 +36,21 @@ action(<<"get_users">> = A, _JSON, Req, Opts, {auth, SData, _SID}) ->
         lager:debug("ASC ~p ~p", [A, {AccountId, UT}]),
         UT =:= 2 orelse throw({error, bad_user_type }),
         Ret = model_user:get_users(),
+        ?OKRESP(A, Ret, Req, Opts)
+    catch
+        E:R ->
+            lager:error("ACCICERR ~p ~p",[E,R]),
+            nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+    end;
+action(<<"delete_user">> = A, JSON, Req, Opts, {auth, SData, _SID}) ->
+    try
+        AccountId = proplists:get_value(<<"account_id">>, SData),
+        UT 	  = proplists:get_value(<<"user_type">>, SData),
+        lager:debug("ASC ~p ~p", [A, {AccountId, UT}]),
+        UT =:= 2 orelse throw({error, bad_user_type }),
+        Params = [ {"uid",       [[], required, undefined ]}],
+        [Uid] = nwapi_utils:get_json_params(JSON, Params),
+        Ret = model_user:delete_user(Uid),
         ?OKRESP(A, Ret, Req, Opts)
     catch
         E:R ->
