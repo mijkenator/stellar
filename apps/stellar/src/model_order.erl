@@ -96,9 +96,12 @@ get_order(Oid) ->
 
 cancel_order(Uid, Oid) when is_binary(Uid)-> cancel_order(binary_to_integer(Uid), Oid);
 cancel_order(Uid, Oid) ->
+    lager:debug("CaOrGo: start", []),
     [{ O }] = get_order(Oid),
+    lager:debug("CaOrGo: ~p ", [O]),
     OUid   = proplists:get_value(<<"user_id">>, O, 0),
     Status = proplists:get_value(<<"status">>, O, 0),
+    lager:debug("CaOr: ~p ", [{OUid, Status, O}]),
     case OUid == Uid of
       true ->
         case lists:member(Status, [<<"pending">>, <<"upcoming">>]) of
@@ -137,12 +140,18 @@ complete_order(Uid, Oid) ->
 
 make_stripe_cancel_payment(Oid) ->
     try
+        lager:debug("MSCP ~p", [Oid]),
         case update_order_for_cancel(Oid) of
             ok -> 
                 [{Order}] = get_order(Oid),
                 OCost = proplists:get_value(<<"cost">>, Order),
                 Token = proplists:get_value(<<"token">>, Order),
-                make_stripe_payment(0, OCost, <<"usd">>, Token, Oid);
+                case Token of
+                    Tkn when is_binary(Tkn), size(Tkn) > 1 ->
+                            make_stripe_payment(0, OCost, <<"usd">>, Token, Oid);
+                    BTkn ->
+                        lager:debug("Bad token on cancel order: ~p", [{Oid, BTkn}])
+                end;
             nok ->
                 lager:error("MSCP failed, no stripe payment", []),
                 {error, <<"no payment">>}
@@ -189,8 +198,11 @@ save_stripe_payment(_AccountId, AmountCnts, _Currency, Token, Orderid) ->
     try
         [{Order}] = get_order(Orderid),
         OCost = proplists:get_value(<<"cost">>, Order),
+        lager:debug("SSP: ~p", [{_AccountId, AmountCnts, OCost, Orderid}]),
+        
         OCost == AmountCnts orelse throw(price_mismatch),
-        update_order_stripe_token(Orderid, Token)
+        update_order_stripe_token(Orderid, Token),
+        true
     catch
         throw:price_mismatch -> {error, <<"wrong price">>};
         _:R                  -> {error, R}
