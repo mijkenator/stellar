@@ -46,8 +46,10 @@ acs_info(OrderInfo) ->
     CatName = lists:nth(21, OrderInfo),
     ServiceName = lists:nth(20, OrderInfo),
     lager:debug("ACSI1 ~p ", [{CatName, ServiceName}]),
-    <<CaL:1/binary, _/binary>> = CatName,
-    <<SeL:1/binary, _/binary>> = ServiceName,
+    %<<CaL:1/binary, _/binary>> = CatName,
+    %<<SeL:1/binary, _/binary>> = ServiceName,
+    CaL = if is_binary(CatName) -> <<CaL0:1/binary, _/binary>> = CatName, CaL0; true -> <<"">> end,
+    SeL = if is_binary(ServiceName) -> <<SeL0:1/binary, _/binary>> = ServiceName, SeL0; true -> <<"">> end,
     OidB = list_to_binary(integer_to_list(lists:nth(1, OrderInfo))),
     OA = <<CaL/binary, SeL/binary, "-", OidB/binary>>,
 
@@ -170,6 +172,8 @@ make_stripe_payment(Oid) ->
         throw:price_mismatch -> {error, <<"wrong price">>};
         _:R                  -> {error, R}
     end.
+make_stripe_payment(AccountId, AmountCnts, _Currency, Token, Orderid) when is_binary(AmountCnts) ->
+    make_stripe_payment(AccountId, binary_to_integer(AmountCnts), _Currency, Token, Orderid);
 make_stripe_payment(AccountId, AmountCnts, _Currency, Token, Orderid) ->
     try
         lager:debug("MSP ~p ", [{AccountId, AmountCnts, _Currency, Token, Orderid}]),
@@ -194,6 +198,8 @@ make_stripe_payment(AccountId, AmountCnts, _Currency, Token, Orderid) ->
         _:R                  -> {error, R}
     end.
 
+save_stripe_payment(_AccountId, AmountCnts, _Currency, Token, Orderid) when is_binary(AmountCnts) ->
+    save_stripe_payment(_AccountId, binary_to_integer(AmountCnts), _Currency, Token, Orderid);
 save_stripe_payment(_AccountId, AmountCnts, _Currency, Token, Orderid) ->
     try
         [{Order}] = get_order(Orderid),
@@ -227,7 +233,7 @@ update_order_for_cancel(Oid) ->
 	end.
 
 update_order_stripe_token(Orderid, Pid1) ->
-    emysql:execute(mysqlpool,<<"update orders set payment_status = 0, payment_id=? where id=?">>,[Pid1, Orderid]).
+    emysql:execute(mysqlpool,<<"update orders set payment_status = 3, payment_token=? where id=?">>,[Pid1, Orderid]).
 
 update_payed_order(Orderid, Pid1) ->
     emysql:execute(mysqlpool,<<"update orders set payment_status = 1, stripe_id=? where id=?">>,[Pid1, Orderid]).
