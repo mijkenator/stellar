@@ -178,18 +178,21 @@ make_stripe_payment(AccountId, AmountCnts, _Currency, Token, Orderid) ->
     try
         lager:debug("MSP ~p ", [{AccountId, AmountCnts, _Currency, Token, Orderid}]),
         [{Order}] = get_order(Orderid),
+        lager:debug("MSP go ~p", [Order]),
         OCost = proplists:get_value(<<"cost">>, Order),
         OCost == AmountCnts orelse throw(price_mismatch),
-        Pcmd = io_lib:format("python3 /opt/stellare/stripe/charge.py -a ~p -s ~p -u ~p -o ~p", 
+        Pcmd0 = io_lib:format("python3 /opt/stellar/stripe/charge.py -a ~p -s ~p -u ~p -o ~p", 
             [AmountCnts, binary_to_list(Token), AccountId, Orderid]),
+        Pcmd = binary_to_list(list_to_binary(Pcmd0)),
+        lager:debug("MSP pcmd ~p", [Pcmd]),
         case os:cmd(Pcmd) of
             "Error\n" ->
-                lager:error("stripe paiment failed ~p", [{AccountId, Orderid, Token}]),
+                lager:error("MSP stripe paiment failed ~p", [{AccountId, Orderid, Token}]),
                 {error, <<"failed">>};
             Pid       ->
-                lager:log("Stripe payment ok ~p", [Pid]),
+                lager:debug("MSP Stripe payment ok ~p", [Pid]),
                 Pid1 = re:replace(Pid,"\\s+","",[global, {return, list}]),
-                lager:log("Stripe payment ok ~p", [Pid1]),
+                lager:debug("MSP Stripe payment ok ~p", [Pid1]),
                 update_payed_order(Orderid, Pid1),
                 Pid1
         end
@@ -207,8 +210,22 @@ save_stripe_payment(_AccountId, AmountCnts, _Currency, Token, Orderid) ->
         lager:debug("SSP: ~p", [{_AccountId, AmountCnts, OCost, Orderid}]),
         
         OCost == AmountCnts orelse throw(price_mismatch),
-        update_order_stripe_token(Orderid, Token),
-        true
+        Pcmd0 = io_lib:format("python3 /opt/stellar/stripe/customer.py -s ~p", [binary_to_list(Token)]),
+        Pcmd = binary_to_list(list_to_binary(Pcmd0)),
+        lager:debug("SSP pcmd ~p", [Pcmd]),
+        Ret = os:cmd(Pcmd),
+        lager:debug("SSP pcmdi ret ~p", [Ret]),
+        case Ret of
+            "Error\n" ->
+                lager:error("SSP stripe paiment failed ~p", [{_AccountId, Orderid, Token}]),
+                {error, <<"failed">>};
+            Caid ->
+                lager:debug("SSP Stripe customer ok ~p", [Caid]),
+                Caid1 = re:replace(Caid,"\\s+","",[global, {return, list}]),
+                lager:debug("SSP Stripe customer ok ~p", [Caid1]),
+                update_order_stripe_token(Orderid, Caid1),
+                true
+        end
     catch
         throw:price_mismatch -> {error, <<"wrong price">>};
         _:R                  -> {error, R}

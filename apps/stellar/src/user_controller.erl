@@ -60,9 +60,14 @@ action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"cancel_order">> ->
         Params = [ 
             {"order_id",    [undefined, required, undefined ]}],
         [Oid] = nwapi_utils:get_json_params(JSON, Params),
-    	Ret = model_order:cancel_order(AccountId, Oid),
-        lager:debug("UCD RET: ~p", [Ret]),
-        ?OKRESP(A, [], Req, Opts)
+    	case model_order:cancel_order(AccountId, Oid) of
+            {error, Error} ->
+                lager:error("CU cancel order ~p ~p",[Oid, Error]),
+                nwapi_utils:old_error_resp(?UNKNOWN_ERROR, A, Req, Opts)
+            ;Ret ->
+                lager:debug("UCD RET: ~p", [Ret]),
+                ?OKRESP(A, [], Req, Opts)
+        end
     catch
         E:R ->
             lager:error("CU WREFERR ~p ~p",[E,R]),
