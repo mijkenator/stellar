@@ -53,9 +53,9 @@ insert_or_update_referrals(Uid, RUid) ->
     emysql:execute(mysqlpool, <<"update user set bonus = bonus + 2000 where id=?">>, [RUid]),
 	case emysql:execute(mysqlpool, <<"select id from referrals where to_email=?">>, [Email]) of
 		{result_packet,_,_,[[Id]],_} when is_integer(Id), Id>0 ->
-              emysql:execute(mysqlpool, <<"update referrals set to_uid=? where id=?">>, [Uid, Id])
-        ;_ -> emysql:execute(mysqlpool, <<"insert into referrals (from_uid, to_email, dtime_sent, to_uid, is_sent) ",
-                "values (?,?,now(),?,0)">>, [RUid, Email, Uid]) 
+              emysql:execute(mysqlpool, <<"update referrals set to_uid=?, to_bonus=2000, from_bonus=2000 where id=?">>, [Uid, Id])
+        ;_ -> emysql:execute(mysqlpool, <<"insert into referrals (from_uid, to_email, dtime_sent, to_uid, is_sent, to_bonus, from_bonus) ",
+                "values (?,?,now(),?,0,2000,2000)">>, [RUid, Email, Uid]) 
     end.
 
 login_restore(Login) -> login_restore(Login, <<"user">>).
@@ -139,10 +139,10 @@ get_users() ->
 
 ref_activity(Uid) ->
 	case emysql:execute(mysqlpool, <<"select id, to_email, cast(dtime_sent as char), ifnull(to_uid, 0), ",
-                                     "is_sent from referrals where from_uid=? ">>, [Uid]) of
+                                     "is_sent, from_bonus from referrals where from_uid=? ">>, [Uid]) of
 		{result_packet,_,_,Ret,_} ->
             lager:debug("RefActivity: ~p", [Ret]),
-            F = [<<"id">>,<<"to_email">>,<<"date">>,<<"to_uid">>,<<"is_sent">>],
+            F = [<<"id">>,<<"to_email">>,<<"date">>,<<"to_uid">>,<<"is_sent">>,<<"bonus_cents">>],
             %[{lists:zip(F,P)}||P<-Ret]
             lists:map(fun(P)-> 
                 lager:debug("_i_RefActivity: ~p", [P]),

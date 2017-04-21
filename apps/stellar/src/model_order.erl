@@ -154,6 +154,7 @@ make_stripe_cancel_payment(Oid) ->
                     BTkn ->
                         lager:debug("Bad token on cancel order: ~p", [{Oid, BTkn}])
                 end;
+            ok1 -> ok;
             nok ->
                 lager:error("MSCP failed, no stripe payment", []),
                 {error, <<"no payment">>}
@@ -245,7 +246,7 @@ update_order_for_cancel(Oid) ->
             ok;
 		{result_packet,_,_,[[Amnt, Hrs]],_} when Hrs > 48 ->
             lager:debug("UOFC > 48 ~p", [Amnt]),
-            nok
+            ok1
         ;_ -> nok
 	end.
 
