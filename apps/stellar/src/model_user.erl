@@ -154,7 +154,13 @@ ref_activity(Uid) ->
         ;_ -> []
 	end.
 
-get_refuser_membership(_Uid) -> {0, <<>>}.
+%get_refuser_membership(_Uid) -> {0, <<>>}.
+get_refuser_membership(Uid) ->
+	case emysql:execute(mysqlpool, <<"select cast(order_done as char) from orders where status='past' and uid=?">>, [Uid]) of
+		{result_packet,_,_,[[Ret]],_} -> {1, Ret}
+        ;_ -> {0, <<>>}
+	end.
+    
 get_refuser_data(Uid) ->
 	case emysql:execute(mysqlpool, <<"select cast(time_created as char) from user where id=?">>, [Uid]) of
 		{result_packet,_,_,[Ret],_} -> Ret
@@ -172,7 +178,7 @@ get_refuid_info(ToUid, IsSent) when is_integer(ToUid), ToUid>0->
         {1,0} ->{{<<"Referral is sent. Account is created. Services are not booked yet.">>,2},<<"NO">>,<<>>};
 
         {0,1} ->{{<<"Somebody used your Referral Code to open an account. Services are booked.">>,5},<<"YES">>,UMSD};
-        {1,1} ->{{<<"Referral is sent. Account is created. Services are booked.">>, 6},<<"YES">>,UMSD}
+        {1,1} ->{{<<"Referral is sent. Account is created. Services are booked.">>, 3},<<"YES">>,UMSD}
     end,
     {[
         {<<"account_created">>, lists:nth(1, RUData)},
