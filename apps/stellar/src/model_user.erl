@@ -18,6 +18,7 @@
     ,check_refcode/1
     ,send_invite/2
     ,ref_activity/1
+    ,user_get_ref_status/1
 ]).
 
 signup(Login, Password) -> signup(Login, Password, <<>>).
@@ -50,12 +51,14 @@ insert_or_update_referrals(Uid, RUid) ->
     [{D}] = get_details(Uid),
     Email = proplists:get_value(<<"email">>, D, <<>>),
     emysql:execute(mysqlpool, <<"update user set bonus = bonus + 2000 where id=?">>, [Uid]),
-    emysql:execute(mysqlpool, <<"update user set bonus = bonus + 2000 where id=?">>, [RUid]),
+    % will add after UID make payments 
+    %emysql:execute(mysqlpool, <<"update user set bonus = bonus + 2000 where id=?">>, [RUid]),
 	case emysql:execute(mysqlpool, <<"select id from referrals where to_email=?">>, [Email]) of
 		{result_packet,_,_,[[Id]],_} when is_integer(Id), Id>0 ->
-              emysql:execute(mysqlpool, <<"update referrals set to_uid=?, to_bonus=2000, from_bonus=2000 where id=?">>, [Uid, Id])
+              %emysql:execute(mysqlpool, <<"update referrals set to_uid=?, to_bonus=2000, from_bonus=2000 where id=?">>, [Uid, Id])
+              emysql:execute(mysqlpool, <<"update referrals set to_uid=?, to_bonus=2000, from_bonus=0 where id=?">>, [Uid, Id])
         ;_ -> emysql:execute(mysqlpool, <<"insert into referrals (from_uid, to_email, dtime_sent, to_uid, is_sent, to_bonus, from_bonus) ",
-                "values (?,?,now(),?,0,2000,2000)">>, [RUid, Email, Uid]) 
+                "values (?,?,now(),?,0,2000,0)">>, [RUid, Email, Uid]) 
     end.
 
 login_restore(Login) -> login_restore(Login, <<"user">>).
@@ -156,7 +159,7 @@ ref_activity(Uid) ->
 
 %get_refuser_membership(_Uid) -> {0, <<>>}.
 get_refuser_membership(Uid) ->
-	case emysql:execute(mysqlpool, <<"select cast(order_done as char) from orders where status='past' and uid=?">>, [Uid]) of
+	case emysql:execute(mysqlpool, <<"select cast(order_done as char) from orders where status='past' and uid=? limit 1">>, [Uid]) of
 		{result_packet,_,_,[[Ret]],_} -> {1, Ret}
         ;_ -> {0, <<>>}
 	end.
@@ -233,4 +236,10 @@ send_invite(Email, Uid) ->
     nwapi_utils:send_email(Email, 
         <<"Subject: invite!\n\n Signup at http://stellarmakeover.com/sign-up?refcode=",Refcode/binary,
         "&email=",Email/binary," with referral code:", Refcode/binary>>).
+
+user_get_ref_status(Uid) ->
+	case emysql:execute(mysqlpool, <<"select id, from_uid from referrals where to_uid=? and from_bonus != 2000 limit 1">>, [Uid]) of
+		{result_packet,_,_,[[Id, RUid]],_} -> {0, RUid, Id}
+        ;R -> {1, R}
+	end.
 

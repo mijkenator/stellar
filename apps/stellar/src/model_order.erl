@@ -136,7 +136,15 @@ complete_order(Uid, Oid) ->
             lager:error("complete order error"),
             emysql:execute(mysqlpool,<<"update orders set payment_status=2, payment_err =? where  id=?">>,[Err, Oid]);
         _Pid        ->
-            emysql:execute(mysqlpool,<<"update orders set status = 'past', order_done=NOW()  where cid=? and id=?">>,[Uid, Oid])
+            emysql:execute(mysqlpool,<<"update orders set status = 'past', order_done=NOW()  where cid=? and id=?">>,[Uid, Oid]),
+            
+            case model_user:user_get_ref_status(Uid) of
+                {0, RUid, Id} ->
+                    emysql:execute(mysqlpool, <<"update referrals from_bonus=2000 where id=?">>, [Id]),
+                    emysql:execute(mysqlpool, <<"update user set bonus = bonus + 2000 where id=?">>, [RUid])
+                ;UGRS ->
+                    lager:debug("UGRS ~p no bonus to referer", [UGRS])
+            end
     end,
     orders_queue:update_orders().
 
