@@ -184,12 +184,29 @@ make_stripe_payment(Oid) ->
 make_stripe_payment(AccountId, AmountCnts, _Currency, Token, Orderid) when is_binary(AmountCnts) ->
     make_stripe_payment(AccountId, binary_to_integer(AmountCnts), _Currency, Token, Orderid);
 make_stripe_payment(AccountId, AmountCnts, _Currency, Token, Orderid) ->
+    Bonus = model_user:fix_bonus(AccountId, AmountCnts),
     try
-        lager:debug("MSP ~p ", [{AccountId, AmountCnts, _Currency, Token, Orderid}]),
+        lager:debug("MSP ~p ", [{AccountId, AmountCnts, _Currency, Token, Orderid, Bonus}]),
         [{Order}] = get_order(Orderid),
         lager:debug("MSP go ~p", [Order]),
         OCost = proplists:get_value(<<"cost">>, Order),
         OCost == AmountCnts orelse throw(price_mismatch),
+        make_stripe_payment_i(AccountId, AmountCnts, _Currency, Token, Orderid, Bonus)
+    catch
+        throw:price_mismatch -> 
+            model_user:back_bonus(AccountId, Bonus),
+            {error, <<"wrong price">>};
+        _:R                  -> 
+            model_user:back_bonus(AccountId, Bonus),
+            {error, R}
+    end.
+
+make_stripe_payment_i(AccountId, AmountCnts, _Currency, _Token, Orderid, Bonus) when Bonus == AmountCnts ->
+        lager:debug("MSP payed by bonus ~p", [{AccountId, Orderid, Bonus, AmountCnts}]),
+        update_payed_order(Orderid, <<"ch_bonus">>);
+make_stripe_payment_i(AccountId, AmountCnts0, _Currency, Token, Orderid, Bonus) ->
+        AmountCnts = AmountCnts0 - Bonus,
+        lager:debug("MSP applied bonus ~p", [Bonus]),
         Pcmd0 = io_lib:format("python3 /opt/stellar/stripe/charge.py -a ~p -s ~p -u ~p -o ~p", 
             [AmountCnts, binary_to_list(Token), AccountId, Orderid]),
         Pcmd = binary_to_list(list_to_binary(Pcmd0)),
@@ -197,6 +214,7 @@ make_stripe_payment(AccountId, AmountCnts, _Currency, Token, Orderid) ->
         case os:cmd(Pcmd) of
             "Error\n" ->
                 lager:error("MSP stripe paiment failed ~p", [{AccountId, Orderid, Token}]),
+                model_user:back_bonus(AccountId, Bonus),
                 {error, <<"failed">>};
             Pid       ->
                 lager:debug("MSP Stripe payment ok ~p", [Pid]),
@@ -204,11 +222,7 @@ make_stripe_payment(AccountId, AmountCnts, _Currency, Token, Orderid) ->
                 lager:debug("MSP Stripe payment ok ~p", [Pid1]),
                 update_payed_order(Orderid, Pid1),
                 Pid1
-        end
-    catch
-        throw:price_mismatch -> {error, <<"wrong price">>};
-        _:R                  -> {error, R}
-    end.
+        end.
 
 save_stripe_payment(_AccountId, AmountCnts, _Currency, Token, Orderid) when is_binary(AmountCnts) ->
     save_stripe_payment(_AccountId, binary_to_integer(AmountCnts), _Currency, Token, Orderid);

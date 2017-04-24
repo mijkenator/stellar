@@ -19,6 +19,8 @@
     ,send_invite/2
     ,ref_activity/1
     ,user_get_ref_status/1
+    ,fix_bonus/2
+    ,back_bonus/2
 ]).
 
 signup(Login, Password) -> signup(Login, Password, <<>>).
@@ -242,4 +244,19 @@ user_get_ref_status(Uid) ->
 		{result_packet,_,_,[[Id, RUid]],_} -> {0, RUid, Id}
         ;R -> {1, R}
 	end.
+
+get_bonus(Uid) ->
+	case emysql:execute(mysqlpool, <<"select bonus from user where id=?">>, [Uid]) of
+		{result_packet,_,_,[[Bonus]],_} -> Bonus
+        ;_R -> 0
+	end.
+set_bonus(Uid, Amnt)  -> emysql:execute(mysqlpool, <<"update user set bonus=? where id=?">>, [Amnt, Uid]). 
+fix_bonus(Uid, Amnt)  ->
+    case get_bonus(Uid) of
+        0 -> 0;
+        B when B =< Amnt -> set_bonus(Uid, 0), B;
+        B -> set_bonus(Uid, B-Amnt), Amnt
+    end.
+back_bonus(Uid, Amnt) -> emysql:execute(mysqlpool, <<"update user set bonus= bonus + ? where id=?">>, [Amnt, Uid]).
+
 
