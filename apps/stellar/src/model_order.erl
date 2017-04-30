@@ -9,7 +9,10 @@
     ,complete_order/2
     ,make_stripe_payment/5
     ,make_stripe_payment/1
+    ,make_stripe_payment/2
     ,save_stripe_payment/5
+    ,make_stripe_cancel_payment/1
+    ,make_stripe_cancel_payment/2
 ]).
 
 admin_get_orders(Uid, Cid) ->
@@ -108,7 +111,7 @@ cancel_order(Uid, Oid) ->
       true ->
         case lists:member(Status, [<<"pending">>, <<"upcoming">>]) of
             true -> 
-                case make_stripe_cancel_payment(Oid) of
+                case make_stripe_cancel_payment(Uid, Oid) of
                     {error, Err} -> {error, Err}
                     ;_ ->
                         emysql:execute(mysqlpool,<<"update orders set status = 'cancelled' where uid=? and id=?">>,[Uid, Oid]),
@@ -131,7 +134,7 @@ take_order(Cid, Oid) ->
     end.
 
 complete_order(Uid, Oid) ->
-    case make_stripe_payment(Oid) of
+    case make_stripe_payment(Uid, Oid) of
         {error, Err} ->
             lager:error("complete order error"),
             emysql:execute(mysqlpool,<<"update orders set payment_status=2, payment_err =? where  id=?">>,[Err, Oid]);
@@ -148,7 +151,8 @@ complete_order(Uid, Oid) ->
     end,
     orders_queue:update_orders().
 
-make_stripe_cancel_payment(Oid) ->
+make_stripe_cancel_payment(Oid) -> make_stripe_cancel_payment(0, Oid).
+make_stripe_cancel_payment(Uid, Oid) ->
     try
         lager:debug("MSCP ~p", [Oid]),
         case update_order_for_cancel(Oid) of
@@ -158,7 +162,7 @@ make_stripe_cancel_payment(Oid) ->
                 Token = proplists:get_value(<<"token">>, Order),
                 case Token of
                     Tkn when is_binary(Tkn), size(Tkn) > 1 ->
-                            make_stripe_payment(0, OCost, <<"usd">>, Token, Oid);
+                            make_stripe_payment(Uid, OCost, <<"usd">>, Token, Oid);
                     BTkn ->
                         lager:debug("Bad token on cancel order: ~p", [{Oid, BTkn}])
                 end;
@@ -171,12 +175,14 @@ make_stripe_cancel_payment(Oid) ->
         throw:price_mismatch -> {error, <<"wrong price">>};
         _:R                  -> {error, R}
     end.
-make_stripe_payment(Oid) ->
+
+make_stripe_payment(Oid) -> make_stripe_payment(0, Oid).
+make_stripe_payment(Uid, Oid) ->
     try
         [{Order}] = get_order(Oid),
         OCost = proplists:get_value(<<"cost">>, Order),
         Token = proplists:get_value(<<"token">>, Order),
-        make_stripe_payment(0, OCost, <<"usd">>, Token, Oid) 
+        make_stripe_payment(Uid, OCost, <<"usd">>, Token, Oid) 
     catch
         throw:price_mismatch -> {error, <<"wrong price">>};
         _:R                  -> {error, R}

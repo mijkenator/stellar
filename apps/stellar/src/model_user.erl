@@ -135,9 +135,10 @@ set_details(Id, Name, Street, Apt, Zip, City, State, Phone) ->
 
 get_users() ->
 	case emysql:execute(mysqlpool, <<"select id, ifnull(name,''), ifnull(street,''), ifnull(apt,''), ifnull(zip,''), ifnull(city,''), ",
-                "ifnull(state,''), ifnull(phone,''), login from user where utype in (0,1) ">>, []) of
+                "ifnull(state,''), ifnull(phone,''), login, cast(time_created as char) from user where utype in (0,1) ">>, []) of
 		{result_packet,_,_,Ret,_} ->
-            F = [<<"id">>, <<"name">>, <<"street">>, <<"apt">>, <<"zip">>, <<"city">>, <<"state">>, <<"phone">>, <<"email">>],
+            F = [<<"id">>, <<"name">>, <<"street">>, <<"apt">>, <<"zip">>, <<"city">>, <<"state">>, 
+                    <<"phone">>, <<"email">>, <<"registration_time">>],
             [{lists:zip(F,P)}||P<-Ret]
         ;_ -> []
 	end.

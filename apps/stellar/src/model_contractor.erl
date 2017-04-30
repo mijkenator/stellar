@@ -79,11 +79,11 @@ get_contractors() ->
 	case emysql:execute(mysqlpool, <<
                 "select u.id, ifnull(c.fname,''), ifnull(c.lname,''), ifnull(u.photo,''), ifnull(u.phone,''), ifnull(u.login,''), ",
                 "ifnull(u.street,''), ifnull(u.apt,''),ifnull(u.city,''),ifnull(u.state,''),"
-                "ifnull(c.cphone,''),ifnull(c.bank_routing,''),ifnull(c.bank_account,'') "
+                "ifnull(c.cphone,''),ifnull(c.bank_routing,''),ifnull(c.bank_account,''), cast(u.time_created as char) "
                 "  from user u left join contractor c on c.uid=u.id where u.utype=3">>, []) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"id">>, <<"fname">>, <<"lname">>, <<"photo">>, <<"phone">>, <<"email">>,
-            <<"street">>,<<"apt">>,<<"city">>,<<"state">>,<<"cell_phone">>,<<"bank_routing">>,<<"bank_account">>],
+            <<"street">>,<<"apt">>,<<"city">>,<<"state">>,<<"cell_phone">>,<<"bank_routing">>,<<"bank_account">>, <<"registration_time">>],
             [{lists:zip(F,P)}||P<-Ret]
         ;_R -> []
 	end.
