@@ -57,7 +57,8 @@ get_details(Uid) ->
 	end.
 
 set_details(Id, FName, LName, Street, Apt, City, Zip, State, CPhone, BankR, BankA, Phone) ->
-    P = [{<<"name">>, <<FName/binary," ", LName/binary>>}, 
+    P = [{<<"name">>,  FName}, 
+         {<<"lname">>, LName},
          {<<"phone">>, Phone},
          {<<"street">>, Street}, {<<"apt">>, Apt}, {<<"city">>, City}, {<<"state">>, State}, {<<"zip">>, Zip}],
     Fun = fun({_, undefined}, A) -> A;

@@ -95,12 +95,13 @@ action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"set_details">> ->
             {"zip",     [undefined, notrequired, undefined ]},
             {"city",    [undefined, notrequired, undefined ]},
             {"state",   [undefined, notrequired, undefined ]},
-            {"phone",   [undefined, notrequired, undefined ]}
+            {"phone",   [undefined, notrequired, undefined ]},
+            {"lname",   [undefined, notrequired, undefined ]}
         ],
         lager:debug("~p Params1: ~p", [A, Params]),
-        [Name, Street, Apt, Zip, City, State, Phone] = nwapi_utils:get_json_params(JSON, Params),
+        [Name, Street, Apt, Zip, City, State, Phone, LName] = nwapi_utils:get_json_params(JSON, Params),
         lager:debug("UCD: ~p", [AccountId]),
-	    Ret = model_user:set_details(AccountId, Name, Street, Apt, Zip, City, State, Phone),
+	    Ret = model_user:set_details(AccountId, Name, Street, Apt, Zip, City, State, Phone, LName),
         lager:debug("UCD RET: ~p", [Ret]),
         ?OKRESP(A, [], Req, Opts)
     catch

@@ -10,6 +10,7 @@
 	,delete_user/1
     ,get_details/1
     ,set_details/8
+    ,set_details/9
     ,get_users/0
     ,create_order/8
     ,create_order/16
@@ -123,8 +124,10 @@ get_ref_flag(Uid) ->
 	end.
 
 set_details(Id, Name, Street, Apt, Zip, City, State, Phone) ->
+    set_details(Id, Name, Street, Apt, Zip, City, State, Phone, undefined).
+set_details(Id, Name, Street, Apt, Zip, City, State, Phone, LName) ->
     P = [{<<"name">>, Name},{<<"street">>, Street},{<<"apt">>,Apt},
-         {<<"zip">>, Zip},{<<"city">>, City},{<<"state">>, State},{<<"phone">>, Phone}],
+         {<<"zip">>, Zip},{<<"city">>, City},{<<"state">>, State},{<<"phone">>, Phone},{<<"lname">>, LName}],
     Fun = fun({_, undefined}, A) -> A;
              ({Fn,V}, {S,Pr})    -> {S++[<<Fn/binary,"=?">>],Pr++[V]} end,
     {SQLl,Pa} = lists:foldl(Fun, {[], []}, P),
