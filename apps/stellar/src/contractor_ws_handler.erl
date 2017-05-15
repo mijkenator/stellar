@@ -24,19 +24,20 @@ websocket_handle({text, <<"SUBSCRIBE">>},  State) ->
     subscribe(<<"new_orders">>),
     {reply, {text, << "SUBSCRIBED">>}, State};
 websocket_handle({text, <<"{\"cmd\":",_/binary>>} = {text, Msg}, State) ->
-    lager:debug("WSH CMD: '~p'",[Msg]),
+    lager:debug("WSH CMD: '~p ~p'",[Msg, State]),
     try 
         {JSON} = jiffy:decode(Msg),
         lager:debug("WSH JSON: '~p'",[JSON]),
         case proplists:get_value(<<"cmd">>, JSON) of
             <<"subscribe">> ->
-                lager:debug("WSH CMD SUBSCR:",[]),
+                Uid = proplists:get_value(<<"uid">>, JSON, 0),
+                lager:debug("WSH CMD SUBSCR: for uid: ~p",[Uid]),
                 subscribe(<<"new_orders">>),
                 lager:debug("WSH CMD SUBSCR OK",[]),
                 Ret = jiffy:encode({[
-                    {<<"orders">>, model_order:get_new_orders()}
+                    {<<"orders">>, model_order:get_new_orders(Uid)}
                 ]}),
-                {reply, {text, Ret}, State}
+                {reply, {text, Ret}, [Uid]}
         end
     catch
         _E:_R ->
@@ -55,7 +56,11 @@ websocket_info({timeout, _Ref, Msg}, State) ->
     erlang:start_timer(10000, self(), <<"ping">>),
     {reply, {text, Msg}, State};
 websocket_info({_Pid, {contractor_ws_handler, <<"new_orders">>}, _Msg}, State) ->
-    NO = model_order:get_new_orders(),
+    Uid = case State of
+        [Uid0] -> Uid0
+        ;_     -> 0
+    end,
+    NO = model_order:get_new_orders(Uid),
     Ret = jiffy:encode({[
         {<<"orders">>, NO}
     ]}),

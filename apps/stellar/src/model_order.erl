@@ -5,6 +5,7 @@
     cancel_order/2
     ,take_order/2
     ,get_new_orders/0
+    ,get_new_orders/1
     ,get_order/1
     ,complete_order/2
     ,make_stripe_payment/5
@@ -26,7 +27,7 @@ admin_get_orders(Uid, Cid) ->
             <<"select o.id, o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
             " o.number_ofservices, o.number_ofcontractors, o.status, ",
             " o.street, o.apt, o.city, o.state, o.cell_phone, o.zip, cast(o.order_done as char), s.title, c.name,  ",
-            " u.name, u.login, ifnull(o.location,''), ifnull(o.payment_status, 0), ifnull(stripe_id, '') ",
+            " u.name, u.login, ifnull(o.location,''), ifnull(o.payment_status, 0), ifnull(stripe_id, ''), ifnull(u.lname, '') ",
             " from orders o left join services s on s.id = o.sid left join service_category c on c.id = s.cat_id ",
             " left join user u on u.id = o.uid ",
             ExtraSQL/binary>>, Params) of
@@ -34,7 +35,8 @@ admin_get_orders(Uid, Cid) ->
             F = [<<"order_id">>, <<"user_id">>, <<"contractor_id">>, <<"service_id">>, <<"cost">>, <<"gratuity">>,
             <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>,
             <<"street">>, <<"apt">>, <<"city">>, <<"state">>, <<"cell_phone">>, <<"zip">>, <<"finish_time">>, 
-            <<"service_name">>, <<"category_name">>, <<"user_name">>, <<"user_email">>, <<"location">>, <<"payment_status">>, <<"stripe_id">>],
+            <<"service_name">>, <<"category_name">>, <<"user_name">>, <<"user_email">>, <<"location">>, <<"payment_status">>, 
+            <<"stripe_id">>, <<"user_lname">>],
             
             [{lists:zip(F,P) ++ acs_info(P) }||P<-Ret]
         %;_ -> []
@@ -64,9 +66,46 @@ acs_info(OrderInfo) ->
 
     [{<<"service_info">>, SI}, {<<"contractor_info">>, CI}, {<<"order_alias">>, OA}].
 
+get_contractor_scid(Uid) ->
+	case emysql:execute(mysqlpool, <<"select service_cat_id from contractor_service where uid=?">>, [Uid]) of
+		{result_packet,_,_,Ret,_} -> [Cscid || [Cscid]<-Ret]
+        ;_E ->
+            lager:error("get_contractor_scid error: ~p", [_E]),
+            []
+    end.
 
+get_new_orders(0)   -> get_new_orders();
+get_new_orders(Uid) ->
+    lager:debug("GNO 1 uid ~p", [Uid]),
+    Csids = get_contractor_scid(Uid),
+    lager:debug("GNO 2 csids ~p ", [Csids]),
+    ExtraSQL = case Csids of
+        [] -> <<>>
+        ;_ -> "and s.cat_id in (" ++  string:join([integer_to_list(C)||C<-Csids],", ") ++ ") "
+    end,
+    lager:debug("GNO 3 ~p ", [ExtraSQL]),
+	case emysql:execute(mysqlpool,
+            <<"select o.id, o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
+            " o.number_ofservices, o.number_ofcontractors, o.status, ",
+            " o.street, o.apt, o.city, o.state, o.cell_phone, o.zip, u.name, u.login, u.phone, ifnull(o.location,''), s.cat_id "
+            " from orders o left join user u on u.id = o.uid ",
+            " left join services s on s.id=o.sid "
+            " where o.cid is null ", ExtraSQL/binary>>, []) of
+		{result_packet,_,_,Ret,_} ->
+            F = [<<"order_id">>, <<"user_id">>, <<"contractor_id">>, <<"service_id">>, <<"cost">>, <<"gratuity">>,
+            <<"tax">>,<<"order_time">>,<<"order_ontime">>,<<"number_of_services">>,<<"number_of_contractors">>, <<"status">>,
+            <<"street">>, <<"apt">>, <<"city">>, <<"state">>, <<"cell_phone">>, <<"zip">>, <<"name">>, 
+            <<"email">>, <<"phone">>, <<"location">>, <<"service_cat_id">>],
+            %lager:debug("MOGNO ~p", [Ret]),
+            %io:format("GNO 2 ~p ~n", [Ret]),
+            [{lists:zip(F,P) ++ acs_info(P)} ||P<-Ret]
+        ;_E ->
+            %lager:error("MOGNO ~p", [_E]),
+            %io:format("GNO 3 ~p ~n", [_E]),
+            []
+	end.
 
-get_new_orders() ->
+get_new_orders()    ->
     io:format("GNO 1 ~n", []),
 	case emysql:execute(mysqlpool,
             <<"select o.id, o.uid, o.cid, o.sid, o.cost, o.gratuity, o.tax, cast(o.order_time as char), cast(o.order_ontime as char), ",
