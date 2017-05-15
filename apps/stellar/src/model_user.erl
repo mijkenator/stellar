@@ -109,10 +109,10 @@ delete_user(Uid) -> emysql:execute(mysqlpool, <<"delete from user where id=?">>,
 
 get_details(Uid) ->
 	case emysql:execute(mysqlpool, <<"select ifnull(name,''), ifnull(street,''), ifnull(apt,''), ifnull(zip,''), ifnull(city,''), ",
-                "ifnull(state,''), ifnull(phone,''), login, ref_id, bonus from user where id=?">>, [Uid]) of
+                "ifnull(state,''), ifnull(phone,''), login, ref_id, bonus, ifnull(lname, '') from user where id=?">>, [Uid]) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"name">>, <<"street">>, <<"apt">>, <<"zip">>, <<"city">>, 
-                 <<"state">>, <<"phone">>, <<"email">>, <<"refcode">>, <<"bonus_cents">>],
+                 <<"state">>, <<"phone">>, <<"email">>, <<"refcode">>, <<"bonus_cents">>, <<"lname">>],
             [{lists:zip(F,P) ++ [{<<"ref_flag">>, get_ref_flag(Uid)}] }||P<-Ret]
         ;_ -> []
 	end.
@@ -138,10 +138,11 @@ set_details(Id, Name, Street, Apt, Zip, City, State, Phone, LName) ->
 
 get_users() ->
 	case emysql:execute(mysqlpool, <<"select id, ifnull(name,''), ifnull(street,''), ifnull(apt,''), ifnull(zip,''), ifnull(city,''), ",
-                "ifnull(state,''), ifnull(phone,''), login, cast(time_created as char) from user where utype in (0,1) ">>, []) of
+                " ifnull(state,''), ifnull(phone,''), login, cast(time_created as char), ifnull(lname, '') ",
+                " from user where utype in (0,1) ">>, []) of
 		{result_packet,_,_,Ret,_} ->
             F = [<<"id">>, <<"name">>, <<"street">>, <<"apt">>, <<"zip">>, <<"city">>, <<"state">>, 
-                    <<"phone">>, <<"email">>, <<"registration_time">>],
+                    <<"phone">>, <<"email">>, <<"registration_time">>, <<"lname">>],
             [{lists:zip(F,P)}||P<-Ret]
         ;_ -> []
 	end.

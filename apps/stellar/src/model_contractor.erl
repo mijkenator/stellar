@@ -2,6 +2,7 @@
 
 -export([
 	signup/3,
+	signup/4,
     get_details/1
     ,set_details/12
     ,check_refcode/1
@@ -29,16 +30,22 @@ check_refcode(Refcode) ->
         ;_ -> nok
 	end.
 
-signup(Login, Password, Refcode) ->
+signup(Login, Password, Refcode) -> signup(Login, Password, Refcode, []).
+signup(Login, Password, Refcode, SCid) ->
     case check_refcode(Refcode) of
-        ok -> signup_i(Login, Password, Refcode)
+        ok -> signup_i(Login, Password, Refcode, SCid)
         ;_ -> {error, <<"bad refcode">>}
     end.
 
-signup_i(Login, Password, Refcode) ->
+signup_i(Login, Password, Refcode, SCids) ->
 	case emysql:execute(mysqlpool, <<"insert into user (login,password,refcode,utype) values (?,?,?,3)">>, [Login,Password,Refcode]) of
 		{ok_packet,_,_,Uid,_,_,[]} -> 
             emysql:execute(mysqlpool, <<"insert into contractor (uid) values (?)">>, [Uid]), 
+            Fun = fun(SCid) ->
+                emysql:execute(mysqlpool, <<"delete from contractor_service where uid=?">>, [Uid]), 
+                emysql:execute(mysqlpool, <<"insert into contractor_service values (?,?)">>, [Uid, SCid])
+            end,
+            lists:foreach(Fun, SCids),
             {ok, Uid};
 		{error_packet,1,1062,<<"23000">>,_} -> {error, <<"already exists">>}
 	end.
