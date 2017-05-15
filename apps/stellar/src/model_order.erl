@@ -292,6 +292,7 @@ save_stripe_payment(_AccountId, AmountCnts, _Currency, Token, Orderid) ->
                 Caid1 = re:replace(Caid,"\\s+","",[global, {return, list}]),
                 lager:debug("SSP Stripe customer ok ~p", [Caid1]),
                 update_order_stripe_token(Orderid, Caid1),
+                send_contractors_email(Orderid),
                 true
         end
     catch
@@ -323,3 +324,27 @@ update_order_stripe_token(Orderid, Pid1) ->
 update_payed_order(Orderid, Pid1) ->
     emysql:execute(mysqlpool,<<"update orders set payment_status = 1, stripe_id=? where id=?">>,[Pid1, Orderid]).
     
+send_contractors_email(Orderid) ->
+    Ocid = get_order_catid(Orderid),
+	case emysql:execute(mysqlpool,
+            <<"select distinct u.login from user u left join contractor_service cs on cs.uid = u.id ",
+            " where u.utype=3 and cs.servie_cat_id=?">>, [Ocid]) of
+		{result_packet,_,_,L,_}  -> 
+            Oid = integer_to_binary(Orderid),
+            Fun = fun(Email) ->
+                nwapi_utils:send_email(Email, 
+                    <<"Subject: new order ready!\n\n",
+                    " Orderid: ", Oid/binary>>)
+            end,
+            lists:foreach(Fun, L),ok
+        ;_ -> nok
+	end.
+
+get_order_catid(Orderid) ->
+	case emysql:execute(mysqlpool,
+            <<"select sc.id from orders o left join services s on s.id=o.sid left join service_category sc on sc.id=s.cat_id ",
+            " where o.id=?">>, [Orderid]) of
+		{result_packet,_,_,[[Id]],_}  -> Id 
+        ;_ -> 0
+	end.
+
