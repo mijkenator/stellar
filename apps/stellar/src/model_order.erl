@@ -82,7 +82,7 @@ get_new_orders(Uid) ->
     lager:debug("GNO 2 csids ~p ", [Csids]),
     ExtraSQL = case Csids of
         [] -> <<>>
-        ;_ -> "and s.cat_id in (" ++  string:join([integer_to_list(C)||C<-Csids],", ") ++ ") "
+        ;_ -> list_to_binary("and s.cat_id in (" ++  string:join([integer_to_list(C)||C<-Csids],", ") ++ ") ")
     end,
     lager:debug("GNO 3 ~p ", [ExtraSQL]),
 	case emysql:execute(mysqlpool,
@@ -326,11 +326,15 @@ update_payed_order(Orderid, Pid1) ->
     emysql:execute(mysqlpool,<<"update orders set payment_status = 1, stripe_id=? where id=?">>,[Pid1, Orderid]).
     
 send_contractors_email(Orderid) ->
+  try
+    lager:debug("SCE1 ~p", [Orderid]),
     Ocid = get_order_catid(Orderid),
+    lager:debug("SCE2 ~p", [Ocid]),
 	case emysql:execute(mysqlpool,
             <<"select distinct u.login from user u left join contractor_service cs on cs.uid = u.id ",
             " where u.utype=3 and cs.service_cat_id=?">>, [Ocid]) of
 		{result_packet,_,_,L,_}  -> 
+            lager:debug("SCE3 ~p", [L]),
             Oid = integer_to_binary(Orderid),
             Fun = fun(Email) ->
                 nwapi_utils:send_email(Email, 
@@ -339,7 +343,10 @@ send_contractors_email(Orderid) ->
             end,
             lists:foreach(Fun, L),ok
         ;_ -> nok
-	end.
+	end
+  catch
+    E:R -> lager:debug("SCE error ~p", [{E,R}]), nok
+  end.
 
 get_order_catid(Orderid) ->
 	case emysql:execute(mysqlpool,
