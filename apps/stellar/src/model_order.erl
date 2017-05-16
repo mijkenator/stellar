@@ -14,6 +14,7 @@
     ,save_stripe_payment/5
     ,make_stripe_cancel_payment/1
     ,make_stripe_cancel_payment/2
+    ,send_contractors_email/1
 ]).
 
 admin_get_orders(Uid, Cid) ->
@@ -328,7 +329,7 @@ send_contractors_email(Orderid) ->
     Ocid = get_order_catid(Orderid),
 	case emysql:execute(mysqlpool,
             <<"select distinct u.login from user u left join contractor_service cs on cs.uid = u.id ",
-            " where u.utype=3 and cs.servie_cat_id=?">>, [Ocid]) of
+            " where u.utype=3 and cs.service_cat_id=?">>, [Ocid]) of
 		{result_packet,_,_,L,_}  -> 
             Oid = integer_to_binary(Orderid),
             Fun = fun(Email) ->
