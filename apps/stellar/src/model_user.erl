@@ -35,8 +35,9 @@ signup(Login, Password, Refcode) ->
         lager:debug("MUS3 ", []),
         signup_with_refcode(Uid, Refcode),
         lager:debug("MUS4 ", []),
-		nwapi_utils:send_email(Login, 
-            <<"Subject: signup confirmation\n\n Confirmation link: http://stellarmakeover.com/after-sign-up/", GUid/binary>>),
+%		nwapi_utils:send_email(Login, 
+%            <<"Subject: signup confirmation\n\n Confirmation link: http://stellarmakeover.com/after-sign-up/", GUid/binary>>),
+        nwapi_utils:send_confirm_email({Login, "http://stellarmakeover.com/after-sign-up/"++binary_to_list(GUid), Login}),
 		{ok, Uid};
 		{error_packet,1,1062,<<"23000">>,_} -> {error, <<"already exists">>}
 	end.

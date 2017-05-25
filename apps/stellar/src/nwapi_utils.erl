@@ -27,6 +27,7 @@
     clean_login/1,
     zip_ver/2,
     get_smtp_creds/0
+    ,send_confirm_email/1
 ]).
 
 
@@ -690,4 +691,14 @@ clean_login_i(<<"+",   Login/binary>>) -> Login;
 clean_login_i(<<"011", Login/binary>>) -> Login;
 clean_login_i(<<"00",  Login/binary>>) -> Login;
 clean_login_i(Login) -> Login.
+
+send_confirm_email({To, CUrl, Name}) ->
+    send_email(To, "../../../../mail_templates/confirm.tmpl",
+        [
+                {from, "support@stellarmakeover.com"},
+                {to, To},
+                {confirmurl, CUrl},
+                {name, Name}
+        ]
+    ).
 
