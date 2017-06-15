@@ -30,6 +30,7 @@
     ,send_confirm_email/1
     ,restore_password_email/2
     ,send_invite_email/3
+    ,new_appointment_email/3
 ]).
 
 
@@ -723,3 +724,19 @@ send_invite_email(To, Refcode, Link) ->
         ]
     ).
 
+new_appointment_email(To, Oid, {Name, Service, ServiceType, SDate, STime, SLoc, CName, SPrice}) ->
+    send_email(To, "../../../../mail_templates/new_appointment.tmpl",
+        [
+                {from, "support@stellarmakeover.com"},
+                {to, To},
+                {oid,  Oid},
+                {name, Name},
+                {service_type, ServiceType},
+                {service, Service},
+                {service_date, SDate},
+                {service_time, STime},
+                {service_loc, SLoc},
+                {customer_name, CName},
+                {service_price, SPrice}
+        ]
+    ).

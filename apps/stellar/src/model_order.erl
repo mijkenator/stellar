@@ -15,6 +15,7 @@
     ,make_stripe_cancel_payment/1
     ,make_stripe_cancel_payment/2
     ,send_contractors_email/1
+    ,get_order_info/1
 ]).
 
 admin_get_orders(Uid, Cid) ->
@@ -324,22 +325,35 @@ update_order_stripe_token(Orderid, Pid1) ->
 
 update_payed_order(Orderid, Pid1) ->
     emysql:execute(mysqlpool,<<"update orders set payment_status = 1, stripe_id=? where id=?">>,[Pid1, Orderid]).
-    
+  
+get_order_info(Orderid) ->
+	case emysql:execute(mysqlpool,
+            <<"select s.title, sc.name, cast(DATE(o.order_ontime) as char), cast(TIME(o.order_ontime) as char), ",
+              "o.location, u.name ,o.cost from orders o ",
+              "left join services s on s.id = o.sid left join user u on u.id = o.uid ",
+              "left join service_category sc on sc.id=s.cat_id "
+              "where o.id=?">>, [Orderid]) of
+		{result_packet,_,_,[Ret],_}  -> list_to_tuple(Ret) 
+        ;_ -> {}
+	end.
+
 send_contractors_email(Orderid) ->
   try
     lager:debug("SCE1 ~p", [Orderid]),
     Ocid = get_order_catid(Orderid),
     lager:debug("SCE2 ~p", [Ocid]),
+    {Service, ServiceType, SDate, STime, SLoc, CName, SPrice} = get_order_info(Orderid),
 	case emysql:execute(mysqlpool,
-            <<"select distinct u.login from user u left join contractor_service cs on cs.uid = u.id ",
+            <<"select distinct u.login, u.name from user u left join contractor_service cs on cs.uid = u.id ",
             " where u.utype=3 and cs.service_cat_id=?">>, [Ocid]) of
 		{result_packet,_,_,L,_}  -> 
             lager:debug("SCE3 ~p", [L]),
             Oid = integer_to_binary(Orderid),
-            Fun = fun(Email) ->
-                nwapi_utils:send_email(Email, 
-                    <<"Subject: new order ready!\n\n",
-                    " Orderid: ", Oid/binary>>)
+            Fun = fun([Email, Name]) ->
+                %nwapi_utils:send_email(Email, 
+                %    <<"Subject: new order ready!\n\n",
+                %    " Orderid: ", Oid/binary>>)
+                nwapi_utils:new_appointment_email(Email, Oid, {Name, Service, ServiceType, SDate, STime, SLoc, CName, SPrice})
             end,
             lists:foreach(Fun, L),ok
         ;_ -> nok
