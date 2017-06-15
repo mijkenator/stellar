@@ -31,6 +31,7 @@
     ,restore_password_email/2
     ,send_invite_email/3
     ,new_appointment_email/3
+    ,take_order_email/1
 ]).
 
 
@@ -740,3 +741,25 @@ new_appointment_email(To, Oid, {Name, Service, ServiceType, SDate, STime, SLoc, 
                 {service_price, SPrice}
         ]
     ).
+
+take_order_email({To,Name,Oid,ServiceType,Service,SDate,STime,SLoc,CName,SPrice,CoName,CoPhone,CoPhoto,CoEmail}) ->
+    send_email(To, "../../../../mail_templates/take_order.tmpl",
+        [
+                {from, "support@stellarmakeover.com"},
+                {to, To},
+                {name, Name},
+                {oid,  Oid},
+                {service_type, ServiceType},
+                {service, Service},
+                {service_date, SDate},
+                {service_time, STime},
+                {service_loc, SLoc},
+                {customer_name, CName},
+                {service_price, SPrice},
+                {contractor_name, CoName},
+                {contractor_phone, CoPhone},
+                {contractor_photo, CoPhoto},
+                {contractor_email, CoEmail}
+        ]
+    ).
+

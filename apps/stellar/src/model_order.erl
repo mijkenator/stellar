@@ -170,6 +170,21 @@ take_order(Cid, Oid) ->
     case OCid == undefined of
       true -> emysql:execute(mysqlpool,<<"update orders set status = 'upcoming', cid = ? where id=?">>, 
               [Cid, Oid]),
+              try
+                  {Service, ServiceType, SDate, STime, SLoc, CName, SPrice, To} = get_order_info(Oid),
+                  CData = model_contractor:get_details(Cid),
+                  CFName = proplists:get_value(<<"fname">>, CData, <<>>),
+                  CLName = proplists:get_value(<<"Lname">>, CData, <<>>),
+                  {CoName, CoPhone, CoPhoto, CoEmail} = {
+                      <<CFName/binary, " ", CLName/binary>>,
+                      proplists:get_value(<<"phone">>, CData, <<>>),
+                      proplists:get_value(<<"photo">>, CData, <<>>),
+                      proplists:get_value(<<"email">>, CData, <<>>)
+                  },
+                  nwapi_utils:take_order_email({To,CName,Oid,ServiceType,Service,SDate,STime,SLoc,CName,SPrice,CoName,CoPhone,CoPhoto,CoEmail})
+              catch
+                Err:Rea -> lager:error("take order email error: ~p", [{Err, Rea}])
+              end,
               orders_queue:update_orders()
       ;_ ->   {error, already_taken} 
     end.
@@ -329,7 +344,7 @@ update_payed_order(Orderid, Pid1) ->
 get_order_info(Orderid) ->
 	case emysql:execute(mysqlpool,
             <<"select s.title, sc.name, cast(DATE(o.order_ontime) as char), cast(TIME(o.order_ontime) as char), ",
-              "o.location, u.name ,o.cost from orders o ",
+              "o.location, u.name, o.cost, u.login from orders o ",
               "left join services s on s.id = o.sid left join user u on u.id = o.uid ",
               "left join service_category sc on sc.id=s.cat_id "
               "where o.id=?">>, [Orderid]) of
@@ -342,7 +357,7 @@ send_contractors_email(Orderid) ->
     lager:debug("SCE1 ~p", [Orderid]),
     Ocid = get_order_catid(Orderid),
     lager:debug("SCE2 ~p", [Ocid]),
-    {Service, ServiceType, SDate, STime, SLoc, CName, SPrice} = get_order_info(Orderid),
+    {Service, ServiceType, SDate, STime, SLoc, CName, SPrice, _ULogin} = get_order_info(Orderid),
 	case emysql:execute(mysqlpool,
             <<"select distinct u.login, u.name from user u left join contractor_service cs on cs.uid = u.id ",
             " where u.utype=3 and cs.service_cat_id=?">>, [Ocid]) of
