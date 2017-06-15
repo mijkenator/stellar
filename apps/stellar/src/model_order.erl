@@ -156,6 +156,12 @@ cancel_order(Uid, Oid) ->
                     {error, Err} -> {error, Err}
                     ;_ ->
                         emysql:execute(mysqlpool,<<"update orders set status = 'cancelled' where uid=? and id=?">>,[Uid, Oid]),
+                        try
+                            {_Service, _ServiceType, _SDate, _STime, _SLoc, CName, _SPrice, To} = get_order_info(Oid),
+                            nwapi_utils:cancel_order_email({To, CName})
+                        catch
+                            CMErr:CMRea -> lager:error("cancel order email issue: ~p", [{CMErr, CMRea}])
+                        end,
                         orders_queue:update_orders()
                 end
             ;_   -> {error, non_cancel_status}

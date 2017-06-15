@@ -32,6 +32,7 @@
     ,send_invite_email/3
     ,new_appointment_email/3
     ,take_order_email/1
+    ,cancel_order_email/1
 ]).
 
 
@@ -760,6 +761,15 @@ take_order_email({To,Name,Oid,ServiceType,Service,SDate,STime,SLoc,CName,SPrice,
                 {contractor_phone, CoPhone},
                 {contractor_photo, CoPhoto},
                 {contractor_email, CoEmail}
+        ]
+    ).
+
+cancel_order_email({To, Name}) ->
+    send_email(To, "../../../../mail_templates/cancel_order.tmpl",
+        [
+                {from, "support@stellarmakeover.com"},
+                {to, To},
+                {name, Name}
         ]
     ).
 
