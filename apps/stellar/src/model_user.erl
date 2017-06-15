@@ -244,9 +244,9 @@ send_invite(Email, Uid) ->
 
     emysql:execute(mysqlpool, <<"insert into referrals (from_uid, to_email, dtime_sent, is_sent) ",
                                 "values (?,?,now(),1)">>, [Uid, Email]),
-    nwapi_utils:send_email(Email, 
-        <<"Subject: invite!\n\n Signup at http://stellarmakeover.com/sign-up?refcode=",Refcode/binary,
-        "&email=",Email/binary," with referral code:", Refcode/binary>>),
+    %nwapi_utils:send_email(Email, 
+    %    <<"Subject: invite!\n\n Signup at http://stellarmakeover.com/sign-up?refcode=",Refcode/binary,
+    %    "&email=",Email/binary," with referral code:", Refcode/binary>>),
     nwapi_utils:send_invite_email(Email, Refcode, <<"http://stellarmakeover.com/sign-up?refcode=",Refcode/binary,"&email=",Email/binary>>).
 
 user_get_ref_status(Uid) ->

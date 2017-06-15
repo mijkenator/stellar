@@ -13,9 +13,10 @@
 
 invite_contractor(Uid, Email) ->
     Refcode = create_refcode(Uid, Email),
-	nwapi_utils:send_email(Email, 
-        <<"Subject: contractor signup link\n\n  Link: http://pro.stellarmakeover.com/contractor-signup?refcode=", 
-                Refcode/binary, "&email=", Email/binary>>).
+	%nwapi_utils:send_email(Email, 
+    %    <<"Subject: contractor signup link\n\n  Link: http://pro.stellarmakeover.com/contractor-signup?refcode=", 
+    %            Refcode/binary, "&email=", Email/binary>>).
+    nwapi_utils:send_invite_email(Email, Refcode, <<"http://pro.stellarmakeover.com/contractor-signup?refcode=",Refcode/binary,"&email=",Email/binary>>).
 
 create_refcode(Uid, Email) ->
 	GUid = list_to_binary(uuid:to_string(uuid:v4())),
