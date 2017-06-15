@@ -246,7 +246,8 @@ send_invite(Email, Uid) ->
                                 "values (?,?,now(),1)">>, [Uid, Email]),
     nwapi_utils:send_email(Email, 
         <<"Subject: invite!\n\n Signup at http://stellarmakeover.com/sign-up?refcode=",Refcode/binary,
-        "&email=",Email/binary," with referral code:", Refcode/binary>>).
+        "&email=",Email/binary," with referral code:", Refcode/binary>>),
+    nwapi_utils:send_invite_email(Email, Refcode, <<"http://stellarmakeover.com/sign-up?refcode=",Refcode/binary,"&email=",Email/binary>>).
 
 user_get_ref_status(Uid) ->
 	case emysql:execute(mysqlpool, <<"select id, from_uid from referrals where to_uid=? and from_bonus != 2000 limit 1">>, [Uid]) of
