@@ -28,6 +28,7 @@
     zip_ver/2,
     get_smtp_creds/0
     ,send_confirm_email/1
+    ,restore_password_email/2
 ]).
 
 
@@ -699,6 +700,15 @@ send_confirm_email({To, CUrl, Name}) ->
                 {to, To},
                 {confirmurl, CUrl},
                 {name, Name}
+        ]
+    ).
+
+restore_password_email(To, Link) ->
+    send_email(To, "../../../../mail_templates/recover_password.tmpl",
+        [
+                {from, "support@stellarmakeover.com"},
+                {to, To},
+                {link, Link}
         ]
     ).
 

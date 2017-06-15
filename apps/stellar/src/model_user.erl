@@ -76,9 +76,12 @@ login_restore(Login, RpT) ->
                 <<"pro">> -> <<"pro.">>;
                 _ -> <<"">>
             end,
-			nwapi_utils:send_email(Login, 
-                <<"Subject: password restore\n\n Restore link: http://",SbD/binary,
-                                "stellarmakeover.com/restore-password/", GUid/binary>>), {ok, Uid}
+			%nwapi_utils:send_email(Login, 
+            %    <<"Subject: password restore\n\n Restore link: http://",SbD/binary,
+            %                    "stellarmakeover.com/restore-password/", GUid/binary>>),
+            nwapi_utils:restore_password_email(Login, 
+                <<"http://",SbD/binary,"stellarmakeover.com/restore-password/", GUid/binary>>),
+            {ok, Uid}
 		;_ -> {error, <<"user not found">>}
 	end.
 
