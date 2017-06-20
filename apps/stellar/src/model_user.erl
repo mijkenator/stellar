@@ -241,13 +241,13 @@ update_order(OrderId, Sid, DTime, ServNum, CNum, Phone, Email, Street, Apt, City
 send_invite(Email, Uid) ->
     [{D}] = get_details(Uid),
     Refcode = proplists:get_value(<<"refcode">>,D,<<>>),
+    Lname   = proplists:get_value(<<"lname">>,D,<<>>),
+    Fname   = proplists:get_value(<<"fname">>,D,<<>>),
+    InvName = <<Fname/binary, " ", Lname/binary>>,
 
     emysql:execute(mysqlpool, <<"insert into referrals (from_uid, to_email, dtime_sent, is_sent) ",
                                 "values (?,?,now(),1)">>, [Uid, Email]),
-    %nwapi_utils:send_email(Email, 
-    %    <<"Subject: invite!\n\n Signup at http://stellarmakeover.com/sign-up?refcode=",Refcode/binary,
-    %    "&email=",Email/binary," with referral code:", Refcode/binary>>),
-    nwapi_utils:send_invite_email(Email, Refcode, <<"http://stellarmakeover.com/sign-up?refcode=",Refcode/binary,"&email=",Email/binary>>).
+    nwapi_utils:send_invite_email(Email, Refcode, <<"http://stellarmakeover.com/sign-up?refcode=",Refcode/binary,"&email=",Email/binary>>, InvName).
 
 user_get_ref_status(Uid) ->
 	case emysql:execute(mysqlpool, <<"select id, from_uid from referrals where to_uid=? and from_bonus != 2000 limit 1">>, [Uid]) of
