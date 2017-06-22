@@ -744,7 +744,7 @@ new_appointment_email(To, Oid, {Name, Service, ServiceType, SDate, STime, SLoc, 
         ]
     ).
 
-take_order_email({To,Name,Oid,ServiceType,Service,SDate,STime,SLoc,CName,SPrice,CoName,CoPhone,CoPhoto,CoEmail}) ->
+take_order_email({To,Name,Oid,ServiceType,Service,SDate,STime,SLoc,CName,SPrice,CoName,CoPhone,CoPhoto,CoEmail,Cid}) ->
     send_email(To, "../../../../mail_templates/take_order.tmpl",
         [
                 {from, "support@stellarmakeover.com"},
@@ -761,7 +761,8 @@ take_order_email({To,Name,Oid,ServiceType,Service,SDate,STime,SLoc,CName,SPrice,
                 {contractor_name, CoName},
                 {contractor_phone, CoPhone},
                 {contractor_photo, CoPhoto},
-                {contractor_email, CoEmail}
+                {contractor_email, CoEmail},
+                {contractor_id, Cid}
         ]
     ).
 

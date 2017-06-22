@@ -178,16 +178,19 @@ take_order(Cid, Oid) ->
               [Cid, Oid]),
               try
                   {Service, ServiceType, SDate, STime, SLoc, CName, SPrice, To} = get_order_info(Oid),
-                  CData = model_contractor:get_details(Cid),
+                  [{CData}] = model_contractor:get_details(Cid),
                   CFName = proplists:get_value(<<"fname">>, CData, <<>>),
-                  CLName = proplists:get_value(<<"Lname">>, CData, <<>>),
-                  {CoName, CoPhone, CoPhoto, CoEmail} = {
+                  CLName = proplists:get_value(<<"lname">>, CData, <<>>),
+                  CoPhone = case  proplists:get_value(<<"phone">>, CData, <<>>) of
+                    <<>> -> proplists:get_value(<<"cell_phone">>, CData, <<>>);
+                    CrPh -> CrPh
+                  end,
+                  {CoName, CoPhoto, CoEmail} = {
                       <<CFName/binary, " ", CLName/binary>>,
-                      proplists:get_value(<<"phone">>, CData, <<>>),
-                      proplists:get_value(<<"photo">>, CData, <<>>),
+                      proplists:get_value(<<"photo">>, CData, <<"/images/default-avatar.png">>),
                       proplists:get_value(<<"email">>, CData, <<>>)
                   },
-                  nwapi_utils:take_order_email({To,CName,Oid,ServiceType,Service,SDate,STime,SLoc,CName,SPrice,CoName,CoPhone,CoPhoto,CoEmail})
+                  nwapi_utils:take_order_email({To,CName,Oid,ServiceType,Service,SDate,STime,SLoc,CName,SPrice,CoName,CoPhone,CoPhoto,CoEmail,Cid})
               catch
                 Err:Rea -> lager:error("take order email error: ~p", [{Err, Rea}])
               end,
@@ -349,8 +352,8 @@ update_payed_order(Orderid, Pid1) ->
   
 get_order_info(Orderid) ->
 	case emysql:execute(mysqlpool,
-            <<"select s.title, sc.name, cast(DATE(o.order_ontime) as char), cast(TIME(o.order_ontime) as char), ",
-              "o.location, u.name, o.cost, u.login from orders o ",
+            <<"select s.title, sc.name, cast(DATE(o.order_ontime) as char), cast(TIME_FORMAT(o.order_ontime, '%H:%i') as char), ",
+              "CONCAT_WS(' ', o.street, o.apt, o.city, o.location), CONCAT(u.name,CONCAT(' ', u.lname)), o.cost, u.login from orders o ",
               "left join services s on s.id = o.sid left join user u on u.id = o.uid ",
               "left join service_category sc on sc.id=s.cat_id "
               "where o.id=?">>, [Orderid]) of
