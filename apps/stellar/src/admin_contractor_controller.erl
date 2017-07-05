@@ -36,10 +36,12 @@ action(A, JSON, Req, Opts, {auth, SData, _SID}) when  A == <<"invite_contractor"
         lager:debug("ASC ~p ~p", [A, {AccountId, UT}]),
         UT =:= 2 orelse throw({error, bad_user_type }),
 	    Params = [ 
-            {"email",    [<<"">>, required, undefined ]}
+            {"email",    [<<"">>, required, undefined ]},
+            {"name",     [<<"">>, required, undefined ]}
         ],
-        [Email] = nwapi_utils:get_json_params(JSON, Params),
-        model_contractor:invite_contractor(AccountId, Email),
+        [Email, Name] = nwapi_utils:get_json_params(JSON, Params),
+        lager:debug("ASCn ~p ~p", [Email, Name]),
+        model_contractor:invite_contractor(AccountId, Email, Name),
         ?OKRESP(A, [], Req, Opts)
     catch
         E:R ->

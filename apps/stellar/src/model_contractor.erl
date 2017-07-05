@@ -8,15 +8,20 @@
     ,check_refcode/1
     ,create_refcode/2
     ,invite_contractor/2
+    ,invite_contractor/3
     ,get_contractors/0
 ]).
 
-invite_contractor(Uid, Email) ->
+invite_contractor(Uid, Email)       -> invite_contractor(Uid, Email, <<>>).
+invite_contractor(Uid, Email, Name) ->
+    lager:debug("MCIC1 ~p", [{Uid, Email}]),
     Refcode = create_refcode(Uid, Email),
+    lager:debug("MCIC2 ~p", [Refcode]),
 	%nwapi_utils:send_email(Email, 
     %    <<"Subject: contractor signup link\n\n  Link: http://pro.stellarmakeover.com/contractor-signup?refcode=", 
     %            Refcode/binary, "&email=", Email/binary>>).
-    nwapi_utils:send_invite_email(Email, Refcode, <<"http://pro.stellarmakeover.com/contractor-signup?refcode=",Refcode/binary,"&email=",Email/binary>>).
+    nwapi_utils:send_invite_email(Email, Refcode, 
+        <<"http://pro.stellarmakeover.com/contractor-signup?refcode=",Refcode/binary,"&email=",Email/binary>>, <<"StellarMakeOver.com">>, Name).
 
 create_refcode(Uid, Email) ->
 	GUid = list_to_binary(uuid:to_string(uuid:v4())),

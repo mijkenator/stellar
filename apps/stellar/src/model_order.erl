@@ -372,7 +372,7 @@ send_contractors_email(Orderid) ->
             " where u.utype=3 and cs.service_cat_id=?">>, [Ocid]) of
 		{result_packet,_,_,L,_}  -> 
             lager:debug("SCE3 ~p", [L]),
-            Oid = integer_to_binary(Orderid),
+            Oid = if  is_integer(Orderid) -> integer_to_binary(Orderid); true -> Orderid end,
             Fun = fun([Email, Name]) ->
                 %nwapi_utils:send_email(Email, 
                 %    <<"Subject: new order ready!\n\n",

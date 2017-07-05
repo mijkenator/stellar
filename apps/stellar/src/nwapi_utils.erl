@@ -30,6 +30,7 @@
     ,send_confirm_email/1
     ,restore_password_email/2
     ,send_invite_email/4
+    ,send_invite_email/5
     ,new_appointment_email/3
     ,take_order_email/1
     ,cancel_order_email/1
@@ -716,14 +717,16 @@ restore_password_email(To, Link) ->
         ]
     ).
 
-send_invite_email(To, Refcode, Link, InviterName) ->
+send_invite_email(To, Refcode, Link, InviterName) -> send_invite_email(To, Refcode, Link, InviterName, <<>>).
+send_invite_email(To, Refcode, Link, InviterName, CName) ->
     send_email(To, "../../../../mail_templates/invite.tmpl",
         [
                 {from, "support@stellarmakeover.com"},
                 {to, To},
                 {link, Link},
                 {refcode, Refcode},
-                {inviter_name, InviterName}
+                {inviter_name, InviterName},
+                {cname, CName}
         ]
     ).
 

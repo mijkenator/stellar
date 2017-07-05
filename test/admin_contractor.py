@@ -3,15 +3,15 @@
 import requests
 
 s = requests.Session()
-url = "http://52.76.131.184/_mijkweb/admin/service"
+url = "https://admin.stellarmakeover.com/_mijkweb/admin/service"
 
-payload = {'request' : '{"type":"get_categories", "login":"mijkenator@gmail.com", "password":"test"}'}
+payload = {'request' : '{"type":"get_categories", "login":"twofatducks@gmail.com", "password":"56*yKF8Qe#zP"}'}
 r = s.post(url, data=payload)
 print(r.text)
 
-url = "http://52.76.131.184/_mijkweb/admin/contractor"
-#payload = {'request' : '{"type":"invite_contractor", "email":"mijkenator@gmail.com"}'}
-payload = {'request' : '{"type":"get_contractors"}'}
+url = "https://admin.stellarmakeover.com/_mijkweb/admin/contractor"
+payload = {'request' : '{"type":"invite_contractor", "email":"mijkenator@mailinator.com"}'}
+#payload = {'request' : '{"type":"get_contractors"}'}
 r = s.post(url, data=payload)
 print(r.text)
 
