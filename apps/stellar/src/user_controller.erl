@@ -176,7 +176,7 @@ action(<<"invite">> = A, JSON, Req, Opts,  {auth, SData, _SID}) ->
             ],
         [Emails] = nwapi_utils:get_json_params(JSON, Params),
         
-        lists:foreach(fun({E})-> model_user:send_invite(proplists:get_value(<<"email">>,E), AccountId) end,Emails),
+        lists:foreach(fun({E})-> model_user:send_invite(proplists:get_value(<<"email">>,E), AccountId, proplists:get_value(<<"name">>),E,<<>>) end,Emails),
         ?OKRESP(A, [], Req, Opts)
     catch
         E:R ->
